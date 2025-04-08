@@ -23,6 +23,10 @@ sentence-transformers==2.6.1
 # TTS
 edge-tts==6.1.10
 
+# bpmn диаграммы
+bpmn_pythonbpmn_python==0.4.0
+
+
 # Pydantic и базовое
 pydantic==2.6.4
 typing-extensions==4.10.0
