@@ -1,10 +1,13 @@
 import json
 import os
+import json
+
 from mistralai import Mistral
 from mistralai.models import UserMessage, SystemMessage
 from langgraph.graph import StateGraph
 from langgraph.checkpoint import MemorySaver
 from dotenv import load_dotenv
+from abc import ABC
 
 load_dotenv()
 
@@ -60,13 +63,12 @@ def llm_call(user_prompt: str, system_prompt: str) -> str:
     return response.choices[0].message.content
 
 
-class VerificationNode:
-    def __init__(self, system_prompt: str = SYSTEM_PROMPT_VERIFICATION_NODE, llm_call: callable = llm_call):
+class BaseNode(ABC):
+    def __init__(self, system_prompt: str, llm_call: callable = llm_call):
         self.system_prompt = system_prompt
         self.llm_call = llm_call
 
-    def verify(self, user_input: str) -> dict:
-        response = self.llm_call(user_input, self.system_prompt)
+    def _process_response(self, response: str) -> dict:
         try:
             result = json.loads(response)
             if not isinstance(result, dict):
@@ -78,40 +80,19 @@ class VerificationNode:
             raise ValueError(f"Unexpected error: {e}")
 
 
-class ClarificationNode:
-    def __init__(self, system_prompt: str = SYSTEM_PROMPT_CLARIFICATION_NODE, llm_call: callable = llm_call):
-        self.system_prompt = system_prompt
-        self.llm_call = llm_call
-
-    def clarify(self, user_input: str) -> dict:
+class VerificationNode(BaseNode):
+    def verify(self, user_input: str = SYSTEM_PROMPT_VERIFICATION_NODE) -> dict:
         response = self.llm_call(user_input, self.system_prompt)
-        try:
-            result = json.loads(response)
-            if not isinstance(result, dict):
-                raise ValueError("Response is not a valid JSON object")
-            return result
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to decode JSON: {e}")
-        except Exception as e:
-            raise ValueError(f"Unexpected error: {e}")
+        return self._process_response(response)
 
 
-class GenerationNode:
-    def __init__(self, system_prompt: str = SYSTEM_PROMPT_GENERATION_NODE, llm_call: callable = llm_call):
-        self.system_prompt = system_prompt
-        self.llm_call = llm_call
-
-    def generate(self, user_input: str) -> dict:
+class ClarificationNode(BaseNode):
+    def clarify(self, user_input: str = SYSTEM_PROMPT_CLARIFICATION_NODE) -> dict:
         response = self.llm_call(user_input, self.system_prompt)
-        try:
-            result = json.loads(response)
-            if not isinstance(result, dict):
-                raise ValueError("Response is not a valid JSON object")
-            return result
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to decode JSON: {e}")
-        except Exception as e:
-            raise ValueError(f"Unexpected error: {e}")
+        return self._process_response(response)
 
 
-print(llm_call("сделай диаграмму процесса обработки заказов в секс шопе", SYSTEM_PROMPT_GENERATION_NODE))
+class GenerationNode(BaseNode):
+    def generate(self, user_input: str = SYSTEM_PROMPT_GENERATION_NODE) -> dict:
+        response = self.llm_call(user_input, self.system_prompt)
+        return self._process_response(response)
