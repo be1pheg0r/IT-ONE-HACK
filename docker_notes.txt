@@ -1,0 +1,9 @@
+ffmpeg - аудио драйвер
+для конды:
+conda config --add channels conda-forge
+conda config --set channel_priority strict
+conda install ffmpeg
+
+если просто линукс с виртуалкой:
+sudo apt-get install ffmpeg
+

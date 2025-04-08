@@ -4,12 +4,15 @@ uvicorn[standard]==0.29.0
 
 # Аудио
 pydub==0.25.1
+pyadio
 ffmpeg-python==0.2.0
 
-# Распознавание речи
-openai-whisper==20231117
-# или
-# faster-whisper==0.10.0
+
+# распознавание речи
+faster-whisper
+ffmpeg-python
+hf_xet
+tqdm
 
 # LangGraph / LangChain
 langgraph==0.0.38
@@ -37,3 +40,4 @@ pymorphy2-dicts-ru==2.4.417127.4579844
 dateparser==1.2.0
 
 # python -m spacy download ru_core_news_md (в докере)
+# sudo apt-get install ffmpeg (для линукса)
