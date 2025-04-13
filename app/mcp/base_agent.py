@@ -56,5 +56,12 @@ class BaseAgent (ABC):
         pass
 
 
+    def get_context(self) -> dict:
+        return {
+            "messages": self.messages,
+            "agent_results": self.agent_results
+        }
+
+
 
 

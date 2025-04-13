@@ -6,4 +6,5 @@ conda install ffmpeg
 
 если просто линукс с виртуалкой:
 sudo apt-get install ffmpeg
+в докере еще надо будет прописать установку graphviz
 
