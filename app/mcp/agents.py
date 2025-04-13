@@ -1,11 +1,8 @@
-from base_agent import BaseAgent
-from llm_constants import PROMPTS, CLARIFICATION_NUM_ITERATIONS, MISTRAL_API_KEY, MODELS
+from app.mcp.base_agent import BaseAgent
+from app.mcp.llm_constants import PROMPTS, CLARIFICATION_NUM_ITERATIONS, MISTRAL_API_KEY, MODELS
 import json
 from mistralai import Mistral
 from mistralai.models import UserMessage, SystemMessage
-from services.markup_to_x6 import x6_layout
-from transformers import pipeline
-import torch
 
 CLIENT = Mistral(api_key=MISTRAL_API_KEY)
 
@@ -42,7 +39,6 @@ class Verifier(BaseAgent):
 
     def __call__(self, state: dict) -> dict:
         user_input = state["user_input"]
-        self._add_user_message(user_input)
         final_prompt = self._build_final_prompt(user_input)
         response = self.llm_call(user_input, final_prompt)
         response = self._process_response(response)
@@ -77,7 +73,6 @@ class Clarifier(BaseAgent):
 
     def __call__(self, state: dict) -> dict:
         user_input = state["user_input"]
-        self._add_user_message(user_input)
         final_prompt = self._build_final_prompt(user_input)
         response = self.llm_call(user_input, final_prompt)
         response = self._process_response(response)
@@ -111,7 +106,6 @@ class Preprocessor(BaseAgent):
 
     def __call__(self, state: dict) -> dict:
         user_input = state["user_input"]
-        self._add_user_message(user_input)
         final_prompt = self._build_final_prompt(user_input)
         response = self.llm_call(user_input, final_prompt)
         response = self._process_response(response)

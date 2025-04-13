@@ -65,7 +65,7 @@ PROMPTS = {
     "verification": system_verification_prompt,
     "preprocessing": preprocessing_prompt
 }
-CLARIFICATION_NUM_ITERATIONS = 2
+CLARIFICATION_NUM_ITERATIONS = 1
 
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 

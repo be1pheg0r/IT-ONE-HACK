@@ -14,9 +14,9 @@ hf-xet==1.0.2
 tqdm==4.67.1
 
 # LangGraph / LangChain
-langgraph==0.0.38
-langchain==0.1.16
-langchain-core==0.1.47
+langchain
+langgraph
+langchain-core
 sentence-transformers==2.6.1
 
 # TTS
