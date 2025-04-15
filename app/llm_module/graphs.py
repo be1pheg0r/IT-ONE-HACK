@@ -87,7 +87,7 @@ class MainGraph:
     @staticmethod
     def after_clarifying_condition(state: MainState) -> str:
         logger.info("Evaluating after clarifying condition.")
-        if state["clarification_num_iterations"] >= 0:
+        if state["clarification_num_iterations"] > 0:
             logger.info("Clarification needed. Returning to clarifier.")
             return "clarifier"
         logger.info("No clarification needed. Proceeding to preprocessor.")
@@ -103,11 +103,11 @@ class MainGraph:
 
     @staticmethod
     def verifier_node(state: MainState) -> dict:
+        state["current"] = ["main", "verifier"]
         logger.info("Executing verifier node.")
         verifier = Verifier(context=state["context"])
         verifier_result = verifier(state)["verifier_result"]
         state["agents_result"]["verifier_result"] = verifier_result
-        state["current"] = ["main", "verifier"]
         state["context"] = verifier.history
         logger.info(f"Verifier node executed successfully."
                     f"Returned state: {state}")
@@ -124,12 +124,12 @@ class MainGraph:
 
     @staticmethod
     def clarifier_node(state: MainState) -> dict:
+        state["current"] = ["main", "clarifier"]
         logger.info("Executing clarifier node.")
         clarifier = Clarifier(context=state["context"])
         clarifier_result = clarifier(state)["clarifier_result"]
         state["agents_result"]["clarifier_result"] = clarifier_result
         state["context"] = clarifier.history
-        state["current"] = ["main", "clarifier"]
         state["clarification_num_iterations"] -= 1
         logger.info(f"Clarifier node executed successfully."
                     f"Returned state: {state}")
@@ -178,3 +178,4 @@ class MainGraph:
         state["current"] = ["main", "clarifier_exit"]
         logger.info("There was clarifier exit")
         return state
+
