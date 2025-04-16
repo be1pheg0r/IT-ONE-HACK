@@ -1,16 +1,15 @@
 import logging
 import langgraph
-from langgraph.graph import StateGraph, END, START
-from app.llm_module.states import MainState, main
-from app.llm_module.agents import Verifier, Clarifier, Preprocessor
-from app.llm_module.src.markup_to_x6 import x6_layout
+from langgraph.graph import StateGraph, START
+from src.utilities.llm_module.states import MainState
+from src.utilities.llm_module.agents import Verifier, Clarifier, Preprocessor
+from src.utilities.llm_module.src.markup_to_x6 import x6_layout
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 class MainGraph:
-
     def __init__(self):
         logger.info("Initializing MainGraph.")
         self.graph = StateGraph(MainState)
@@ -154,7 +153,8 @@ class MainGraph:
         logger.info("Executing preprocessor node.")
         preprocessor = Preprocessor(context=state["context"])
         preprocessor_result = preprocessor(state)["preprocessor_result"]
-        state["agents_result"]["preprocessor_result"] = x6_layout(preprocessor_result)
+        state["agents_result"]["preprocessor_result"] = x6_layout(
+            preprocessor_result)
         state["context"] = preprocessor.history
         state["current"] = ["main", "preprocessor"]
         logger.info(f"Preprocessor node executed successfully."
@@ -178,4 +178,3 @@ class MainGraph:
         state["current"] = ["main", "clarifier_exit"]
         logger.info("There was clarifier exit")
         return state
-

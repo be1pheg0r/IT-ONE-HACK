@@ -3,7 +3,7 @@ from typing import List, Callable, Optional
 import json
 import logging
 import langid
-from app.llm_module.llm_constants import LANGUAGES
+from src.utilities.llm_module.llm_constants import LANGUAGES
 
 logger = logging.getLogger("BaseAgent")
 logger.setLevel(logging.DEBUG)
@@ -15,6 +15,7 @@ if not logger.handlers:
     logger.addHandler(ch)
 
 langid.set_languages(LANGUAGES)
+
 
 class BaseAgent(ABC):
     def __init__(self, system_prompt: str, llm_call: Callable, context: Optional[List[dict]] = None):
@@ -34,16 +35,20 @@ class BaseAgent(ABC):
         logger.debug(f"[{self._agent_role()}] Built prompt: {prompt}")
 
         try:
-            raw_response = self.llm_call(messages=history, system_prompt=prompt)
-            logger.debug(f"[{self._agent_role()}] LLM raw response: {raw_response}")
+            raw_response = self.llm_call(
+                messages=history, system_prompt=prompt)
+            logger.debug(
+                f"[{self._agent_role()}] LLM raw response: {raw_response}")
             response = self._process_response(raw_response)
         except Exception as e:
-            logger.exception(f"[{self._agent_role()}] Error during LLM call or response parsing: {e}")
+            logger.exception(
+                f"[{self._agent_role()}] Error during LLM call or response parsing: {e}")
             raise
 
         logger.info(f"[{self._agent_role()}] Parsed response: {response}")
 
-        self._add_to_history({"role": "assistant", "content": json.dumps({self._agent_role(): response}, ensure_ascii=False)})
+        self._add_to_history({"role": "assistant", "content": json.dumps(
+            {self._agent_role(): response}, ensure_ascii=False)})
 
         state[f"{self._agent_role()}_result"] = response
         state["context"] = self.history
@@ -63,7 +68,8 @@ class BaseAgent(ABC):
             f"History of the conversation:\n"
             f"{json.dumps(history, ensure_ascii=False)}\n\n"
         )
-        logger.info(f"[{self._agent_role()}] Final prompt built: {final_prompt}")
+        logger.info(
+            f"[{self._agent_role()}] Final prompt built: {final_prompt}")
         return final_prompt
 
     def _build_history(self) -> List[dict]:
@@ -87,7 +93,8 @@ class BaseAgent(ABC):
                     result = json.loads(entry["content"])
                     results.append(result)
                 except json.JSONDecodeError:
-                    logger.warning(f"[{self._agent_role()}] Could not decode assistant message: {entry['content']}")
+                    logger.warning(
+                        f"[{self._agent_role()}] Could not decode assistant message: {entry['content']}")
         return results
 
     def _process_response(self, response: str) -> dict:
@@ -97,5 +104,6 @@ class BaseAgent(ABC):
                 raise ValueError("Response is not a valid JSON object")
             return result
         except Exception as e:
-            logger.error(f"[{self._agent_role()}] Failed to parse response: {response}")
+            logger.error(
+                f"[{self._agent_role()}] Failed to parse response: {response}")
             raise ValueError(f"Failed to parse agent response: {e}")

@@ -1,5 +1,5 @@
-from app.llm_module.base_agent import BaseAgent
-from app.llm_module.llm_constants import PROMPTS, MISTRAL_API_KEY, MODELS
+from src.utilities.llm_module.base_agent import BaseAgent
+from src.utilities.llm_module.llm_constants import PROMPTS, MISTRAL_API_KEY, MODELS
 from mistralai import Mistral
 from mistralai.models import SystemMessage
 from typing import List, Optional
@@ -21,16 +21,17 @@ def mistral_call(messages: List[dict], system_prompt: str) -> str:
             passed = False
 
 
-
 class Verifier(BaseAgent):
     def __init__(self, system_prompt: str = PROMPTS["verification"], llm_call: callable = mistral_call,
                  context: Optional[List[dict]] = None):
         super().__init__(system_prompt, llm_call, context)
 
+
 class Clarifier(BaseAgent):
     def __init__(self, system_prompt: str = PROMPTS["clarification"], llm_call: callable = mistral_call,
                  context: Optional[List[dict]] = None):
         super().__init__(system_prompt, llm_call, context)
+
 
 class Preprocessor(BaseAgent):
     def __init__(self, system_prompt: str = PROMPTS["preprocessing"], llm_call: callable = mistral_call,

@@ -1,4 +1,4 @@
-from app.llm_module.llm_constants import X6_CANVAS_SHAPE
+from src.utilities.llm_module.llm_constants import X6_CANVAS_SHAPE
 import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout
 
@@ -45,7 +45,8 @@ def x6_layout(graph: dict):
     for node_id, (x, y) in pos.items():
         node_data = G.nodes[node_id]
         shape = node_data.get("shape", "activity")
-        width, height = shape_sizes.get(shape, shape_sizes["activity"])  # Используем значение по умолчанию
+        # Используем значение по умолчанию
+        width, height = shape_sizes.get(shape, shape_sizes["activity"])
         label = node_data.get("label", node_id)
 
         # Масштабируем позиции узлов по осям x и y
@@ -57,7 +58,7 @@ def x6_layout(graph: dict):
             "id": node_id,
             "shape": shape,
             "width": width * x_scale,   # Масштабируем ширину
-            "height": height * y_scale, # Масштабируем высоту
+            "height": height * y_scale,  # Масштабируем высоту
             "position": {
                 "x": scaled_x,
                 "y": scaled_y
