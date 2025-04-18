@@ -4,7 +4,7 @@ from mistralai import Mistral
 from mistralai.models import SystemMessage
 import langid
 import logging
-from app.utils.logger import setup_logger
+from src.utilities.debug.logger import setup_logger
 import json
 from typing import List, Optional
 
@@ -38,14 +38,9 @@ class Clarifier(BaseAgent):
                  context: Optional[List[dict]] = None):
         super().__init__(system_prompt, llm_call, context)
 
-<<<<<<< HEAD:src/utilities/llm_module/agents.py
 
-class Preprocessor(BaseAgent):
-    def __init__(self, system_prompt: str = PROMPTS["preprocessing"], llm_call: callable = mistral_call,
-=======
 class X6Processor(BaseAgent):
     def __init__(self, system_prompt: str = PROMPTS["x6processing"], llm_call: callable = mistral_call,
->>>>>>> main:app/llm_module/agents.py
                  context: Optional[List[dict]] = None):
         super().__init__(system_prompt, llm_call, context)
 
@@ -54,4 +49,3 @@ class Editor(BaseAgent):
     def __init__(self, system_prompt: str = PROMPTS["editing"], llm_call: callable = mistral_call,
                  context: Optional[List[dict]] = None):
         super().__init__(system_prompt, llm_call, context)
-

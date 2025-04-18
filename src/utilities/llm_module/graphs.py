@@ -1,28 +1,19 @@
+from src.utilities.llm_module.src.markup_to_x6 import x6_layout
+from src.utilities.llm_module.test import visualize_bpmn_graph
 import datetime
 import logging
 import langgraph
-<<<<<<< HEAD:src/utilities/llm_module/graphs.py
-from langgraph.graph import StateGraph, START
-from src.utilities.llm_module.states import MainState
-from src.utilities.llm_module.agents import Verifier, Clarifier, Preprocessor
-from src.utilities.llm_module.src.markup_to_x6 import x6_layout
-=======
 from langgraph.graph import StateGraph, START, END
-from app.llm_module.states import GenerationState, MainState, generation, main
-from app.llm_module.agents import Verifier, Clarifier, X6Processor, Editor
+from src.utilities.llm_module.states import GenerationState, MainState, generation, main
+from src.utilities.llm_module.agents import Verifier, Clarifier, X6Processor, Editor
 from typing import Callable
->>>>>>> main:app/llm_module/graphs.py
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-<<<<<<< HEAD:src/utilities/llm_module/graphs.py
-class MainGraph:
-=======
 class GenerationGraph:
 
->>>>>>> main:app/llm_module/graphs.py
     def __init__(self):
         self.graph = StateGraph(GenerationState)
 
@@ -38,9 +29,9 @@ class GenerationGraph:
 
         self.graph.add_conditional_edges(START, self.entry_condition,
                                          {
-                                                "verifier": "verifier",
+                                             "verifier": "verifier",
                                              "clarifier": "clarifier",
-                                                "bpmn_condition": "bpmn_condition"
+                                             "bpmn_condition": "bpmn_condition"
                                          })
 
         self.graph.add_edge("x6processor", END)
@@ -48,20 +39,19 @@ class GenerationGraph:
 
         self.graph.add_conditional_edges("verifier", self.verifier_condition,
                                          {
-                                                "clarifier": "clarifier",
-                                                END: END
+                                             "clarifier": "clarifier",
+                                             END: END
                                          })
 
         self.graph.add_conditional_edges("clarifier", self.clarifier_condition,
                                          {
-                                                "user_input_exit": END,
-                                                "bpmn_condition": "bpmn_condition"
+                                             "user_input_exit": END,
+                                             "bpmn_condition": "bpmn_condition"
                                          })
         self.graph.add_conditional_edges("bpmn_condition", self.bpmn_condition, {
-                                                "editor": "editor",
-                                                "x6processor": "x6processor"
-                                         })
-
+            "editor": "editor",
+            "x6processor": "x6processor"
+        })
 
     def __call__(self, state: GenerationState) -> GenerationState:
         logger.info(f"Processing state: {state}")
@@ -69,7 +59,6 @@ class GenerationGraph:
         state = graph.invoke(state)
         logger.info(f"State after processing: {state}")
         return state
-
 
     def compile(self):
         logger.info("Compiling the graph")
@@ -127,22 +116,6 @@ class GenerationGraph:
             return "bpmn_condition"
 
     @staticmethod
-<<<<<<< HEAD:src/utilities/llm_module/graphs.py
-    def user_reply_node(state: MainState) -> dict:
-        pass
-
-    @staticmethod
-    def preprocessor_node(state: MainState) -> dict:
-        logger.info("Executing preprocessor node.")
-        preprocessor = Preprocessor(context=state["context"])
-        preprocessor_result = preprocessor(state)["preprocessor_result"]
-        state["agents_result"]["preprocessor_result"] = x6_layout(
-            preprocessor_result)
-        state["context"] = preprocessor.history
-        state["current"] = ["main", "preprocessor"]
-        logger.info(f"Preprocessor node executed successfully."
-                    f"Returned state: {state}")
-=======
     def x6processor_node(state: GenerationState):
         state["current"] = ["generator", "x6processor"]
         logger.info("X6Processor agent is processing")
@@ -150,7 +123,6 @@ class GenerationGraph:
         state = x6processor(state)
         state["bpmn"] = state["agents_result"]["x6processor"]["result"]
         logger.info("X6Processor agent process ended")
->>>>>>> main:app/llm_module/graphs.py
         return state
 
     @staticmethod
@@ -168,12 +140,6 @@ class GenerationGraph:
         return state
 
     @staticmethod
-<<<<<<< HEAD:src/utilities/llm_module/graphs.py
-    def clarifier_exit_node(state: MainState) -> dict:
-        state["current"] = ["main", "clarifier_exit"]
-        logger.info("There was clarifier exit")
-        return state
-=======
     def bpmn_condition(state: GenerationState) -> str:
         logger.info("Generation agent check")
         if state["bpmn"] != {"nodes": [], "edges": []}:
@@ -181,6 +147,7 @@ class GenerationGraph:
             return "editor"
         logger.info("BPMN is not present")
         return "x6processor"
+
 
 query = ("Сделай мне диаграмму BPMN для процесса найма сотрудников. "
          "Я хочу, чтобы она была простой и понятной. "
@@ -226,8 +193,5 @@ state = graph(state)
 
 print(state["bpmn"])
 
-from app.llm_module.test import visualize_bpmn_graph
-from app.llm_module.src.markup_to_x6 import x6_layout
 
 visualize_bpmn_graph(x6_layout(state["bpmn"]))
->>>>>>> main:app/llm_module/graphs.py

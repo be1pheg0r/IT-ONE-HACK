@@ -1,11 +1,6 @@
 from typing_extensions import TypedDict
-<<<<<<< HEAD:src/utilities/llm_module/states.py
-from src.utilities.llm_module.llm_constants import CLARIFICATION_NUM_ITERATIONS
-from typing import List
-=======
-from app.llm_module.llm_constants import CLARIFICATION_NUM_ITERATIONS, GENERATION_NUM_ITERATIONS
+from src.utilities.llm_module.llm_constants import CLARIFICATION_NUM_ITERATIONS, GENERATION_NUM_ITERATIONS
 from typing import List, Dict
->>>>>>> main:app/llm_module/states.py
 
 
 class AgentResult(TypedDict, total=False):
@@ -30,15 +25,6 @@ class GenerationState(BaseState):
 class MainState(BaseState):
     states: dict[str, BaseState]
 
-<<<<<<< HEAD:src/utilities/llm_module/states.py
-    return {
-        "user_input": user_input,
-        "agents_result": agents_result,
-        "current": current,
-        "context": context,
-        "clarification_num_iterations": clarification_num_iterations
-    }
-=======
 
 class EditingState(BaseState):
     pass
@@ -71,4 +57,3 @@ def main(user_input: str, states: Dict[str, Dict] = None, agents_result: Dict[st
         context=context or [],
         await_user_input=await_user_input
     )
->>>>>>> main:app/llm_module/states.py
