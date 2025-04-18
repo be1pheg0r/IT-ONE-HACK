@@ -1,7 +1,6 @@
 from src.utilities.debug.logger import setup_logger
 from mistralai.models import SystemMessage, UserMessage, AssistantMessage
 from typing import Callable, List, Optional, Dict
-import uuid
 from abc import ABC
 from typing import List, Callable, Optional
 import json
