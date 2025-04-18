@@ -1,17 +1,13 @@
-import datetime
 import logging
-import langgraph
 from langgraph.graph import StateGraph, START, END
-from app.llm_module.states import GenerationState, MainState, generation, main
-from app.llm_module.agents import Verifier, Clarifier, X6Processor, Editor
-from typing import Callable
+from src.utilities.llm_module.states import GenerationState
+from src.utilities.llm_module.agents import Verifier, Clarifier, X6Processor, Editor
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 class GenerationGraph:
-
     def __init__(self):
         self.graph = StateGraph(GenerationState)
 
@@ -27,9 +23,9 @@ class GenerationGraph:
 
         self.graph.add_conditional_edges(START, self.entry_condition,
                                          {
-                                                "verifier": "verifier",
+                                             "verifier": "verifier",
                                              "clarifier": "clarifier",
-                                                "bpmn_condition": "bpmn_condition"
+                                             "bpmn_condition": "bpmn_condition"
                                          })
 
         self.graph.add_edge("x6processor", END)
@@ -37,20 +33,19 @@ class GenerationGraph:
 
         self.graph.add_conditional_edges("verifier", self.verifier_condition,
                                          {
-                                                "clarifier": "clarifier",
-                                                END: END
+                                             "clarifier": "clarifier",
+                                             END: END
                                          })
 
         self.graph.add_conditional_edges("clarifier", self.clarifier_condition,
                                          {
-                                                "user_input_exit": END,
-                                                "bpmn_condition": "bpmn_condition"
+                                             "user_input_exit": END,
+                                             "bpmn_condition": "bpmn_condition"
                                          })
         self.graph.add_conditional_edges("bpmn_condition", self.bpmn_condition, {
-                                                "editor": "editor",
-                                                "x6processor": "x6processor"
-                                         })
-
+            "editor": "editor",
+            "x6processor": "x6processor"
+        })
 
     def __call__(self, state: GenerationState) -> GenerationState:
         logger.info(f"Processing state: {state}")
@@ -58,7 +53,6 @@ class GenerationGraph:
         state = graph.invoke(state)
         logger.info(f"State after processing: {state}")
         return state
-
 
     def compile(self):
         logger.info("Compiling the graph")
@@ -147,52 +141,3 @@ class GenerationGraph:
             return "editor"
         logger.info("BPMN is not present")
         return "x6processor"
-
-query = ("Сделай мне диаграмму BPMN для процесса найма сотрудников. "
-         "Я хочу, чтобы она была простой и понятной. "
-         "Сделай так, чтобы она была на русском языке. "
-         "И добавь туда все необходимые элементы. "
-         "Список элементов: "
-         "1. Начало процесса\n"
-         "2. Сбор резюме\n"
-         "3. Проведение собеседования\n"
-         "4. Выбор кандидата\n"
-         "5. Проверка рекомендаций\n"
-         "6. Отправка предложения кандидату\n"
-         "7. Подписание контракта\n"
-         "8. Начало работы кандидата\n"
-         "9. Завершение процесса\n")
-
-state = generation(
-    user_input=query,
-)
-
-graph = GenerationGraph()
-
-state = graph(state)
-
-state["user_input"] = "Добавь в нее еще 5 элементов по теме диаграммы"
-state["await_user_input"] = False
-state = graph(state)
-
-print(state["bpmn"])
-
-state["user_input"] = "БОТ уничтожь диаграмму"
-state["await_user_input"] = False
-
-state = graph(state)
-
-print(state["bpmn"])
-
-state["user_input"] = "Бот верни диаграмму но на корейском языке"
-
-state["await_user_input"] = False
-
-state = graph(state)
-
-print(state["bpmn"])
-
-from app.llm_module.test import visualize_bpmn_graph
-from app.llm_module.src.markup_to_x6 import x6_layout
-
-visualize_bpmn_graph(x6_layout(state["bpmn"]))
