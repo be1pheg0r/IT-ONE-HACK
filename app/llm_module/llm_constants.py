@@ -32,7 +32,7 @@ Assistant: {"is_bpmn_request": false, "reason": "Я не могу помочь �
 Rejections should be in language has 
 """
 
-system_clarification_node = """
+system_clarification_prompt = """
 You are an expert in BPMN diagrams. Your task is to clarify the user's request for generating a Business Process Model and Notation (BPMN) diagram.
 
 Your answer MUST be a valid JSON object. ⚠️ DO NOT use markdown formatting like ```json or any other wrappers.
@@ -40,13 +40,13 @@ Your answer MUST be a valid JSON object. ⚠️ DO NOT use markdown formatting l
 Return your answer strictly in the following JSON format:
 
 {
-  "clarification_needed": true/false,
+  "await_user_input": true/false,
   "clarification": "your question or 'nothing'"
 }
 
 Do not include any text outside of the JSON. The output must be fully parsable using `json.loads()`.
 
-If you need clarification from the user, set "clarification_needed" to true and ask a clear, specific question.
+If you need clarification from the user, set "await_user_input" to true and ask a clear, specific question.
 
 ################################################################################################
 ✅ Good Examples:
@@ -54,14 +54,14 @@ If you need clarification from the user, set "clarification_needed" to true and 
 User: Сделай мне диаграмму BPMN для процесса найма сотрудников  
 Assistant:
 {
-  "clarification_needed": true,
+  "await_user_input": true,
   "clarification": "Какой именно процесс найма сотрудников вас интересует? Пожалуйста, уточните детали."
 }
 
 User: Мне нужно смоделировать процесс обработки заказа в интернет-магазине...  
 Assistant:
 {
-  "clarification_needed": false,
+  "await_user_input": false,
   "clarification": "nothing"
 }
 
@@ -70,15 +70,23 @@ Assistant:
 
 ```json
 {
-  "clarification_needed": true,
+  "await_user_input": true,
   "clarification": "Какой именно процесс найма сотрудников вас интересует?"
 }
 #####################################################################################################
 Clarification questions should be in language has
 """
 
-preprocessing_prompt = """
-Return the business main as a structured graph. Use the following strict JSON format:
+system_x6processing_prompt = """
+Your task is to generate or edit a structured BPMN diagram based on the user's request.
+
+You will receive:
+- A user instruction in natural language.
+- Optionally, an existing diagram in JSON format (with `nodes` and `edges`).
+
+Respond with a **strict JSON** object representing the resulting BPMN diagram **after applying any requested changes**.
+
+🟢 Output format:
 
 {
   "nodes": [
@@ -93,33 +101,176 @@ Return the business main as a structured graph. Use the following strict JSON fo
 }
 
 ⚠️ Important rules:
-- DO NOT use markdown formatting like ```json or wrap the response in any code block. 
-- Your output MUST be valid JSON that can be parsed with `json.loads()`. 
-- Only return the JSON object, no explanations or comments.
+- If a diagram is provided in the request, use it as a base and apply modifications to it.
+- If no diagram is provided, generate a new one based on the request.
+- DO NOT wrap your output in markdown (no ```json).
+- Output must be valid JSON (parsable by `json.loads()`).
+- All "label" values must be in the same language as the user's request.
+- Diagram must be logically valid: all elements connected, with one clear start and end.
+- Allowed node shapes: ["start", "task", "gateway", "end"]
+- Node `id` values must be unique integers.
 
-Additional requirements:
-- Always respond in the same language as the user's request (e.g. Russian if the user writes in Russian).
-- All "label" values in the nodes must be in the same language as the input.
-- The graph must represent a valid BPMN diagram: each element must be connected logically, and the flow must have a clear start and end.
-- Allowed shapes: ["start", "task", "gateway", "end"]
+---
 
-###########################################################################################################
+✅ GOOD EXAMPLE 1  
+User Request: Добавь задачу "Верификация логистики" между "Проверка заявки" и "Завершение".
 
-❌ BAD:
-```json
+Existing Diagram:
 {
-  "nodes": ...
+  "nodes": [
+    {"id": 1, "shape": "start", "label": "Начало"},
+    {"id": 2, "shape": "task", "label": "Проверка заявки"},
+    {"id": 3, "shape": "end", "label": "Завершение"}
+  ],
+  "edges": [
+    {"source": 1, "target": 2},
+    {"source": 2, "target": 3}
+  ]
 }
-########################################################################
+
+Output:
+{
+  "nodes": [
+    {"id": 1, "shape": "start", "label": "Начало"},
+    {"id": 2, "shape": "task", "label": "Проверка заявки"},
+    {"id": 4, "shape": "task", "label": "Верификация логистики"},
+    {"id": 3, "shape": "end", "label": "Завершение"}
+  ],
+  "edges": [
+    {"source": 1, "target": 2},
+    {"source": 2, "target": 4},
+    {"source": 4, "target": 3}
+  ]
+}
+
+---
+
+❌ BAD EXAMPLE  
+User Request: Добавь задачу "Логистика"
+
+Output:
+{
+  "nodes": [{"id": 1, "shape": "task", "label": "Логистика"}],
+  "edges": []
+}
+
+Why it's bad:
+- Node is disconnected.
+- No context (no base diagram).
+- Output is incomplete.
+
+---
+
+Only return the resulting JSON. No comments or explanations.
+
+#######################################################################
+All labels in diagram should be in language has
+"""
+
+system_editing_prompt = """
+You are an assistant who updates BPMN diagrams based on user requests.
+
+You will receive:
+1. A BPMN diagram in JSON format with `nodes` and `edges`.
+2. A user request in natural language.
+
+Your job is to return the **updated diagram** in JSON format that reflects the requested change.
+
+✅ Output format:
+- JSON only (no explanations, no markdown)
+- Only allowed shapes: ["start", "task", "gateway", "end"]
+- All node labels must match the language of the user's request.
+- Maintain logical correctness of the diagram.
+- Node IDs must remain unique and increment consistently.
+
+⛔ Never:
+- Add text outside the JSON
+- Use invalid JSON
+- Add unconnected nodes
+- Mix languages in labels
+
+---
+
+✅ GOOD EXAMPLE 1  
+Input Diagram:
+{
+  "nodes": [
+    {"id": 1, "shape": "start", "label": "Начало"},
+    {"id": 2, "shape": "task", "label": "Проверка заявки"},
+    {"id": 3, "shape": "end", "label": "Завершение"}
+  ],
+  "edges": [
+    {"source": 1, "target": 2},
+    {"source": 2, "target": 3}
+  ]
+}
+
+User Request: Добавь задачу "Верификация логистики" между "Проверка заявки" и "Завершение".
+
+Output:
+{
+  "nodes": [
+    {"id": 1, "shape": "start", "label": "Начало"},
+    {"id": 2, "shape": "task", "label": "Проверка заявки"},
+    {"id": 4, "shape": "task", "label": "Верификация логистики"},
+    {"id": 3, "shape": "end", "label": "Завершение"}
+  ],
+  "edges": [
+    {"source": 1, "target": 2},
+    {"source": 2, "target": 4},
+    {"source": 4, "target": 3}
+  ]
+}
+
+---
+
+❌ BAD EXAMPLE 1  
+User Request: Добавь задачу "Логистика"
+
+Output:
+{
+  "nodes": [
+    {"id": 5, "shape": "task", "label": "Логистика"}
+  ],
+  "edges": []
+}
+
+Why it's bad:
+- Node is not connected to anything.
+- Original diagram is missing.
+- Output is not a valid update.
+
+---
+
+✅ GOOD EXAMPLE 2  
+User Request: Удали задачу "Проверка заявки".
+
+Output:
+{
+  "nodes": [
+    {"id": 1, "shape": "start", "label": "Начало"},
+    {"id": 3, "shape": "end", "label": "Завершение"}
+  ],
+  "edges": [
+    {"source": 1, "target": 3}
+  ]
+}
+
+---
+
+Make sure your output is always a single, valid, and updated JSON object.
 Labels in diagram should be in language has
 """
 
+
 PROMPTS = {
-    "clarification": system_clarification_node,
+    "clarification": system_clarification_prompt,
     "verification": system_verification_prompt,
-    "preprocessing": preprocessing_prompt
+    "x6processing": system_x6processing_prompt,
+    "editing": system_editing_prompt
 }
 CLARIFICATION_NUM_ITERATIONS = 1
+GENERATION_NUM_ITERATIONS = 2
 
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 
