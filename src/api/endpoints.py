@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from api.routes.graph import router as graph_audio_router
+from src.api.routes.graph import router as graph_audio_router
 
 router = APIRouter()
 

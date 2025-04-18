@@ -1,11 +1,11 @@
 import decouple
 
 from functools import lru_cache
-from config.settings.base import BackendBaseSettings
-from config.settings.development import BackendDevSettings
-from config.settings.environment import Environment
-from config.settings.production import BackendProdSettings
-from config.settings.staging import BackendStageSettings
+from src.config.settings.base import BackendBaseSettings
+from src.config.settings.development import BackendDevSettings
+from src.config.settings.environment import Environment
+from src.config.settings.production import BackendProdSettings
+from src.config.settings.staging import BackendStageSettings
 
 
 class BackendSettingsFactory:
