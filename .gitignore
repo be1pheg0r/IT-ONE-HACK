@@ -162,3 +162,4 @@ cython_debug/
 app/mcp/test.py
 app/mcp/test_files/
 app/files/graph_renders/
+app/files/test_data/

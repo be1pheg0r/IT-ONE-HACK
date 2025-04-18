@@ -153,13 +153,27 @@ Output:
   "nodes": [{"id": 1, "shape": "task", "label": "Логистика"}],
   "edges": []
 }
-
 Why it's bad:
 - Node is disconnected.
 - No context (no base diagram).
 - Output is incomplete.
 
----
+----------------------------------------------
+
+User Request: Убери задачу "Доставка"
+
+Output:
+```json
+{
+    "nodes": [...],
+    "edges": [...]
+}
+```
+
+Why it's bad:
+- Markdown markup (it's forbidden)
+
+############################################################################
 
 Only return the resulting JSON. No comments or explanations.
 

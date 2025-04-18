@@ -9,8 +9,27 @@ class AgentResult(TypedDict, total=False):
 
 
 class BaseState(TypedDict):
+    """
+    АРГУМЕНТЫ СОСТОЯНИЯ
+    -----------------------------
+    user_input - запрос пользователя, для вызова графа надо обновить
+    этот аргумент в состоянии и вызвать граф
+
+    last - [{graph_name}, {agent_name}] - полезный аргумент, хранящий последнего выполняемого агента
+    нужно для возвращения к графу после нового инпута от юзера
+
+    context - все сообщения в типизации UserMessage, AssistantMessage и SystemMessage (возможно придется менять
+    для локального инференса
+
+    bpmn - диаграмма, просто аргумент для быстрого доступа
+
+    agents_result - словарь, который хранит ПОСЛЕДНЕЕ срабатывание каждого агента, надо будет проапргейдить до
+    хранения каждого результата агента, займусь
+
+    await_user_input - флаг, указывающий на ожидание инпута
+    """
     user_input: str
-    current: List[str]
+    last: List[str]
     context: List[dict]
     bpmn: List
     agents_result: Dict[str, AgentResult]
@@ -18,42 +37,36 @@ class BaseState(TypedDict):
 
 
 class GenerationState(BaseState):
+    """
+    clarification_num_iterations - гиперпараметр (опционально), указывающий максимальную глубину петли уточнения
+    пример:
+    clarification_num_iterations = 2
+    User: Бот сделать диаграмму
+    Assistant: Что должно быть в вашей диаграмме?
+    User: Процессы
+    Assistant: Какие процессы?
+    User: Разные
+    Assistant: {Генерация графа}
+    generation_num_iterations - гиперпараметр (опционально), указывающий на кол-во повторных генераций,
+    при инвалидности предыдущих (сейчас не используется)
+    """
     clarification_num_iterations: int
     generation_num_iterations: int
 
 
-class MainState(BaseState):
-    states: dict[str, BaseState]
-
-
-class EditingState(BaseState):
-    pass
-
-
-def generation(user_input: str, agents_result: Dict[str, Dict] = None, bpmn: List = None, current: List = None,
+def generation(user_input: str, agents_result: Dict[str, Dict] = None, bpmn: List = None, last: List = None,
                context: List[dict] = None, await_user_input: bool = False,
                clarification_num_iterations: int = CLARIFICATION_NUM_ITERATIONS) -> GenerationState:
+    """
+    просто хэндлер под быстрое создания начального состояния
+    """
     return GenerationState(
         user_input=user_input,
         agents_result=agents_result or {},
         clarification_num_iterations=clarification_num_iterations,
         generation_num_iterations=GENERATION_NUM_ITERATIONS,
-        current=current or ["generator", "verifier"],
-        bpmn=bpmn or [],
-        context=context or [],
-        await_user_input=await_user_input
-    )
-
-
-def main(user_input: str, states: Dict[str, Dict] = None, agents_result: Dict[str, Dict] = None, current: List = None,
-         bpmn: List = None, await_user_input: bool = False,
-         context: List[dict] = None) -> MainState:
-    return MainState(
-        user_input=user_input,
-        states=states or {},
-        agents_result=agents_result or {},
-        current=current or ["main", "basic_entry"],
-        bpmn=bpmn or [],
+        last=last or ["generator", "verifier"],
+        bpmn=bpmn or {"nodes": [], "edges": []},
         context=context or [],
         await_user_input=await_user_input
     )

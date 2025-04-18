@@ -199,3 +199,13 @@ def mistral_call(messages: List[dict], system_prompt: str) -> str:
         except:
             passed = False
 
+# df = generate_prompt_dataframe(200)
+# df.to_csv("../files/test_data/data.csv")
+
+df = pd.read_csv("../files/test_data/data.csv").drop(["Unnamed: 0"], axis=1)
+
+df = df[df["query"].str.contains("Sure, here's a prompt for you:")]
+print(df["query"])
+
+from app.llm_module.agents import X6Processor
+
