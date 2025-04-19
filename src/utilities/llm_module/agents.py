@@ -1,11 +1,17 @@
 from src.utilities.llm_module.base_agent import BaseAgent
 from src.utilities.llm_module.llm_constants import PROMPTS, MISTRAL_API_KEY, MODELS
 from mistralai import Mistral
-import logging
-from src.utilities.debug.logger import setup_logger
 from typing import List, Optional
+import logging
 
-logger = setup_logger("BaseAgent", logging.DEBUG)
+logger = logging.getLogger("Mistral")
+logger.setLevel(logging.DEBUG)
+if not logger.handlers:
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
 CLIENT = Mistral(api_key=MISTRAL_API_KEY)
 
@@ -21,7 +27,7 @@ def mistral_call(messages: List[dict]) -> str:
             )
             return response.choices[0].message.content
         except:
-            passed = False
+            continue
 
 
 class Verifier(BaseAgent):
@@ -29,12 +35,10 @@ class Verifier(BaseAgent):
                  context: Optional[List[dict]] = None):
         super().__init__(system_prompt, llm_call, context)
 
-
 class Clarifier(BaseAgent):
     def __init__(self, system_prompt: str = PROMPTS["clarification"], llm_call: callable = mistral_call,
                  context: Optional[List[dict]] = None):
         super().__init__(system_prompt, llm_call, context)
-
 
 class X6Processor(BaseAgent):
     def __init__(self, system_prompt: str = PROMPTS["x6processing"], llm_call: callable = mistral_call,
@@ -46,3 +50,4 @@ class Editor(BaseAgent):
     def __init__(self, system_prompt: str = PROMPTS["editing"], llm_call: callable = mistral_call,
                  context: Optional[List[dict]] = None):
         super().__init__(system_prompt, llm_call, context)
+

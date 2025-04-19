@@ -1,7 +1,7 @@
 from graphviz import Digraph
 from IPython.display import Image, display
-from app.src.utilities.llm_module.states import generation
-from app.src.utilities.llm_module.agents import CLIENT
+from src.utilities.llm_module.states import generation
+from src.utilities.llm_module.agents import CLIENT
 import random
 import pandas as pd
 from tqdm import tqdm
@@ -159,18 +159,14 @@ def generate_prompt_dataframe(n=100):
 
 
 import uuid
-from app.utils.logger import setup_logger
 import langid
 
-logger = setup_logger("BaseAgent")
-from app.src.utilities.llm_module.llm_constants import MISTRAL_API_KEY, MODELS
+from llm_constants import MISTRAL_API_KEY, MODELS
 from mistralai import Mistral
 from mistralai.models import SystemMessage
 import logging
-from app.utils.logger import setup_logger
 from typing import List, Optional
 
-logger = setup_logger("BaseAgent", logging.DEBUG)
 
 CLIENT = Mistral(api_key=MISTRAL_API_KEY)
 
@@ -191,8 +187,8 @@ def mistral_call(messages: List[dict], system_prompt: str) -> str:
 # df = generate_prompt_dataframe(200)
 # df.to_csv("../files/test_data/data.csv")
 
-df = pd.read_csv("../../../files/test_data/data.csv").drop(["Unnamed: 0"], axis=1)
-
-df = df[df["query"].str.contains("Sure, here's a prompt for you:")]
-print(df["query"])
+# df = pd.read_csv("../../../files/test_data/data.csv").drop(["Unnamed: 0"], axis=1)
+#
+# df = df[df["query"].str.contains("Sure, here's a prompt for you:")]
+# print(df["query"])
 

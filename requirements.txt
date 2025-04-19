@@ -15,7 +15,7 @@ tqdm==4.67.1
 
 # LangGraph / LangChain
 langchain
-langgraph
+langgraph~=0.3.29
 langchain-core
 sentence-transformers==2.6.1
 
@@ -27,7 +27,7 @@ bpmn_python==0.0.18
 
 
 # Pydantic и базовое
-pydantic==2.10.4
+pydantic~=2.11.2
 typing_extensions==4.12.2
 
 # 🔍 NLP-инструменты
@@ -45,3 +45,12 @@ dateparser==1.2.0
 mistralai==1.6.0
 # python -m spacy download ru_core_news_md (в докере)
 # sudo apt-get install ffmpeg (для линукса)
+numpy~=1.26.4
+pyaudio~=0.2.14
+torch~=2.6.0
+networkx~=3.4.2
+pandas~=2.2.3
+langid~=1.1.6
+graphviz~=0.20.3
+ipython~=8.30.0
+python-dotenv~=1.1.0
