@@ -3,7 +3,7 @@ from typing import List, Callable, Optional
 import json
 import logging
 import langid
-from app.llm_module.llm_constants import LANGUAGES
+from app.src.utilities.llm_module.llm_constants import LANGUAGES
 
 logger = logging.getLogger("BaseAgent")
 logger.setLevel(logging.DEBUG)

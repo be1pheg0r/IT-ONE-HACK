@@ -1,7 +1,7 @@
 import logging
 from langgraph.graph import StateGraph, START, END
-from app.llm_module.states import GenerationState
-from app.llm_module.agents import Verifier, Clarifier, X6Processor, Editor
+from app.src.utilities.llm_module.states import GenerationState
+from app.src.utilities.llm_module.agents import Verifier, Clarifier, X6Processor, Editor
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

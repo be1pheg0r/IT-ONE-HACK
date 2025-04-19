@@ -1,4 +1,4 @@
-from app.llm_module.llm_constants import X6_CANVAS_SHAPE
+from app.src.utilities.llm_module.llm_constants import X6_CANVAS_SHAPE
 import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout
 from typing import List

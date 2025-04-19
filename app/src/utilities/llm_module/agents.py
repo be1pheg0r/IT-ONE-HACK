@@ -1,5 +1,5 @@
-from app.llm_module.base_agent import BaseAgent
-from app.llm_module.llm_constants import PROMPTS, MISTRAL_API_KEY, MODELS
+from app.src.utilities.llm_module.base_agent import BaseAgent
+from app.src.utilities.llm_module.llm_constants import PROMPTS, MISTRAL_API_KEY, MODELS
 from mistralai import Mistral
 from mistralai.models import SystemMessage
 import langid

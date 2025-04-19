@@ -1,5 +1,5 @@
 from typing_extensions import TypedDict
-from app.llm_module.llm_constants import CLARIFICATION_NUM_ITERATIONS, GENERATION_NUM_ITERATIONS
+from app.src.utilities.llm_module.llm_constants import CLARIFICATION_NUM_ITERATIONS, GENERATION_NUM_ITERATIONS
 from typing import List, Dict
 
 
