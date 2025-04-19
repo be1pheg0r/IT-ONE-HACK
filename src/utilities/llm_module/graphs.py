@@ -220,53 +220,59 @@ class GenerationGraph:
         return "x6processor"
 
 
-query = ("Сделай мне диаграмму BPMN для процесса найма сотрудников. "
-         "Я хочу, чтобы она была простой и понятной. "
-         "Сделай так, чтобы она была на русском языке. "
-         "И добавь туда все необходимые элементы. "
-         "Список элементов: "
-         "1. Начало процесса\n"
-         "2. Сбор резюме\n"
-         "3. Проведение собеседования\n"
-         "4. Выбор кандидата\n"
-         "5. Проверка рекомендаций\n"
-         "6. Отправка предложения кандидату\n"
-         "7. Подписание контракта\n"
-         "8. Начало работы кандидата\n"
-         "9. Завершение процесса\n")
+query = ("""
+Сделай мне диаграмму BPMN для процесса онбординга нового сотрудника.  
+Я хочу, чтобы она была на русском языке, включала ветвления по условиям и циклы там, где это необходимо.  
+Сделай процесс логичным и понятным. Добавь все нужные элементы.
 
-# from src.utilities.llm_module.states import generation
-# from src.utilities.llm_module.test import visualize_bpmn_graph
-# from src.utilities.llm_module.src.markup_to_x6 import x6_layout
-# 
-#
-# state = generation(
-#     user_input=query,
-# )
-#
-# graph = GenerationGraph()
-#
-# state = graph(state)
-#
-# visualize_bpmn_graph(x6_layout(state["bpmn"]), "1")
-#
-# state["user_input"] = "Добавь в нее еще 5 элементов по теме диаграммы"
-# state["await_user_input"] = False
-# state = graph(state)
-#
-# print(state["bpmn"])
-# visualize_bpmn_graph(x6_layout(state["bpmn"]), "2")
-#
-#
-# state["user_input"] = "БОТ уничтожь диаграмму"
-# state["await_user_input"] = False
-#
-# state = graph(state)
-#
-# state["user_input"] = "Бот верни диаграмму но на испанском языке"
-#
-# state["await_user_input"] = False
-#
-# state = graph(state)
-#
-# visualize_bpmn_graph(x6_layout(state["bpmn"]), "3")
+Список элементов:
+1. Начало процесса  
+2. Подготовка рабочего места  
+3. Отправка приветственного письма  
+4. Проведение вводного инструктажа  
+5. Проверка — прошёл ли сотрудник инструктаж?  
+   - Если нет, повторить инструктаж  
+6. Назначение наставника  
+7. Проведение первых задач  
+8. Оценка результата выполнения первых задач  
+   - Если результат неудовлетворительный, вернуться к обучению  
+9. Подписание всех необходимых документов  
+10. Завершение онбординга  
+11. Конец процесса""")
+
+from src.utilities.llm_module.states import generation
+from src.utilities.llm_module.test import visualize_bpmn_graph
+from src.utilities.llm_module.src.markup_to_x6 import x6_layout
+
+
+state = generation(
+    user_input=query,
+)
+
+graph = GenerationGraph()
+
+state = graph(state)
+
+visualize_bpmn_graph(x6_layout(state["bpmn"]), "1")
+
+state["user_input"] = "Добавь в нее еще 5 элементов по теме диаграммы"
+state["await_user_input"] = False
+state = graph(state)
+
+layout_result = x6_layout(state["bpmn"])
+print(layout_result)
+visualize_bpmn_graph(layout_result, "2")
+
+
+state["user_input"] = "БОТ уничтожь диаграмму"
+state["await_user_input"] = False
+
+state = graph(state)
+
+state["user_input"] = "Бот верни диаграмму но на испанском языке"
+
+state["await_user_input"] = False
+
+state = graph(state)
+
+visualize_bpmn_graph(x6_layout(state["bpmn"]), "3")
