@@ -25,31 +25,37 @@ class BaseAgent(ABC):
         self.system_prompt = system_prompt
         self.llm_call = llm_call
         self.history: List = context if context is not None else []
-        logger.debug(f"{self._agent_role()} initialized. History length: {len(self.history)}")
+        logger.debug(
+            f"{self._agent_role()} initialized. History length: {len(self.history)}")
 
     def __call__(self, state: Dict) -> Dict:
         user_input = state.get("user_input", "")
         logger.info(f"[{self._agent_role()}] Received input: {user_input}")
 
         self.history.append(UserMessage(content=user_input))
-        logger.debug(f"[{self._agent_role()}] Appended UserMessage. History length: {len(self.history)}")
+        logger.debug(
+            f"[{self._agent_role()}] Appended UserMessage. History length: {len(self.history)}")
 
         lang = langid.classify(user_input)[0]
-        sys_msg = SystemMessage(content=f"{self.system_prompt}{lang} language code")
+        sys_msg = SystemMessage(
+            content=f"{self.system_prompt}{lang} language code")
         messages = [sys_msg] + self.history
 
         try:
             raw_response = self.llm_call(messages=messages)
-            logger.debug(f"[{self._agent_role()}] LLM raw response: {raw_response}")
+            logger.debug(
+                f"[{self._agent_role()}] LLM raw response: {raw_response}")
             response = self._process_response(raw_response)
         except Exception as e:
-            logger.exception(f"[{self._agent_role()}] Error during LLM call or parsing: {e}")
+            logger.exception(
+                f"[{self._agent_role()}] Error during LLM call or parsing: {e}")
             raise
 
         logger.info(f"[{self._agent_role()}] Parsed response: {response}")
 
         self.history.append(AssistantMessage(content=raw_response))
-        logger.debug(f"[{self._agent_role()}] Appended AssistantMessage. History length: {len(self.history)}")
+        logger.debug(
+            f"[{self._agent_role()}] Appended AssistantMessage. History length: {len(self.history)}")
 
         state["context"] = self.history
         logger.debug(f"[{self._agent_role()}] Updated state context.")
@@ -71,13 +77,15 @@ class BaseAgent(ABC):
 
     def _process_response(self, raw: str) -> Dict:
         try:
-            data = json.loads(raw)
+            data = json.loads(raw.strip().strip('```').strip('json'))
             if not isinstance(data, dict):
                 raise ValueError("Response is not a JSON object")
             return data
         except json.JSONDecodeError as e:
-            logger.error(f"[{self._agent_role()}] JSON decode error: {e}\nRaw: {raw}")
+            logger.error(
+                f"[{self._agent_role()}] JSON decode error: {e}\nRaw: {raw}")
             raise
         except Exception as e:
-            logger.error(f"[{self._agent_role()}] Response processing error: {e}")
+            logger.error(
+                f"[{self._agent_role()}] Response processing error: {e}")
             raise

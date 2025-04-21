@@ -1,11 +1,6 @@
 from src.utilities.llm_module.llm_constants import X6_CANVAS_SHAPE
 import networkx as nx
-from networkx.drawing.nx_agraph import graphviz_layout
-from typing import List
-
-import warnings
-
-warnings.filterwarnings("ignore")
+import math
 
 
 def x6_layout(graph: dict | list[dict]):
@@ -17,8 +12,36 @@ def x6_layout(graph: dict | list[dict]):
     for edge in graph["edges"]:
         G.add_edge(edge["source"], edge["target"], **edge)
 
-    # Принудительно слева направо
-    pos = graphviz_layout(G, prog="dot", args='-Grankdir="LR"')
+    # Собственная реализация размещения слева направо
+    pos = {}
+    levels = {}
+
+    # Определяем уровни для каждого узла (топологическая сортировка)
+    for node in nx.topological_sort(G):
+        if not list(G.predecessors(node)):
+            levels[node] = 0
+        else:
+            levels[node] = max(levels[p] for p in G.predecessors(node)) + 1
+
+    # Группируем узлы по уровням
+    level_groups = {}
+    for node, level in levels.items():
+        level_groups.setdefault(level, []).append(node)
+
+    # Распределяем узлы по уровням и позициям
+    max_level = max(levels.values()) if levels else 0
+    vertical_spacing = 100
+    horizontal_spacing = 150
+
+    for level, nodes in level_groups.items():
+        # Сортируем узлы в пределах уровня для согласованности
+        nodes_sorted = sorted(nodes)
+        n_nodes = len(nodes_sorted)
+        for i, node in enumerate(nodes_sorted):
+            # Равномерное распределение по вертикали
+            y = (i - n_nodes/2) * vertical_spacing
+            x = level * horizontal_spacing
+            pos[node] = (x, y)
 
     shape_sizes_norm = {
         "start": (1.0, 1.0),
