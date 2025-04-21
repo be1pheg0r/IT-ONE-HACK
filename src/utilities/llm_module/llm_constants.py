@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 system_verification_prompt = """
-You are an expert in BPMN diagrams. Your task is to determine whether the user's request expresses an intention to generate a Business Process Model and Notation (BPMN) diagram.
+You are an expert in BPMN diagrams. Your activity is to determine whether the user's request expresses an intention to generate a Business Process Model and Notation (BPMN) diagram.
 
 Use a warm, friendly tone and include emojis where appropriate to make the response more natural and engaging 😊.
 
@@ -33,7 +33,7 @@ Rejections should be in language has
 """
 
 system_clarification_prompt = """
-You are an expert in BPMN diagrams. Your task is to clarify the user's request for generating a Business Process Model and Notation (BPMN) diagram.
+You are an expert in BPMN diagrams. Your activity is to clarify the user's request for generating a Business Process Model and Notation (BPMN) diagram.
 
 Your answer MUST be a valid JSON object. ⚠️ DO NOT use markdown formatting like ```json or any other wrappers.
 
@@ -78,7 +78,7 @@ Clarification questions should be in language has
 """
 
 system_x6processing_prompt = """
-Your task is to generate or edit a structured BPMN diagram based on the user's request.
+Your activity is to generate or edit a structured BPMN diagram based on the user's request.
 
 You will receive:
 - A user instruction in natural language.
@@ -90,8 +90,8 @@ Respond with a **strict JSON** object representing the resulting BPMN diagram **
 
 {
   "nodes": [
-    {"id": 1, "shape": "start", "label": "Start"},
-    {"id": 2, "shape": "task", "label": "Check application"},
+    {"id": 1, "shape": "event", "label": "Push data"},
+    {"id": 2, "shape": "activity", "label": "Check application"},
     ...
   ],
   "edges": [
@@ -107,7 +107,7 @@ Respond with a **strict JSON** object representing the resulting BPMN diagram **
 - Output must be valid JSON (parsable by `json.loads()`).
 - All "label" values must be in the same language as the user's request.
 - Diagram must be logically valid: all elements connected, with one clear start and end.
-- Allowed node shapes: ["start", "task", "gateway", "end"]
+- Only allowed shapes: ["event", "activity", "gateway"]
 - Node `id` values must be unique integers.
 
 ---
@@ -118,9 +118,9 @@ User Request: Добавь задачу "Верификация логистик
 Existing Diagram:
 {
   "nodes": [
-    {"id": 1, "shape": "start", "label": "Начало"},
-    {"id": 2, "shape": "task", "label": "Проверка заявки"},
-    {"id": 3, "shape": "end", "label": "Завершение"}
+    {"id": 1, "shape": "event", "label": "Получение данных"},
+    {"id": 2, "shape": "activity", "label": "Проверка заявки"},
+    {"id": 3, "shape": "activity", "label": "Верификация процесса"}
   ],
   "edges": [
     {"source": 1, "target": 2},
@@ -131,10 +131,10 @@ Existing Diagram:
 Output:
 {
   "nodes": [
-    {"id": 1, "shape": "start", "label": "Начало"},
-    {"id": 2, "shape": "task", "label": "Проверка заявки"},
-    {"id": 4, "shape": "task", "label": "Верификация логистики"},
-    {"id": 3, "shape": "end", "label": "Завершение"}
+    {"id": 1, "shape": "event", "label": "Импорт реквизитов"},
+    {"id": 2, "shape": "activity", "label": "Проверка заявки"},
+    {"id": 4, "shape": "activity", "label": "Верификация логистики"},
+    {"id": 3, "shape": "gateway", "label": "Условие наличия"}
   ],
   "edges": [
     {"source": 1, "target": 2},
@@ -150,7 +150,7 @@ User Request: Добавь задачу "Логистика"
 
 Output:
 {
-  "nodes": [{"id": 1, "shape": "task", "label": "Логистика"}],
+  "nodes": [{"id": 1, "shape": "activity", "label": "Логистика"}],
   "edges": []
 }
 Why it's bad:
@@ -192,7 +192,7 @@ Your job is to return the **updated diagram** in JSON format that reflects the r
 
 ✅ Output format:
 - JSON only (no explanations, no markdown)
-- Only allowed shapes: ["start", "task", "gateway", "end"]
+- Only allowed shapes: ["event", "activity", "gateway"]
 - All node labels must match the language of the user's request.
 - Maintain logical correctness of the diagram.
 - Node IDs must remain unique and increment consistently.
@@ -209,9 +209,9 @@ Your job is to return the **updated diagram** in JSON format that reflects the r
 Input Diagram:
 {
   "nodes": [
-    {"id": 1, "shape": "start", "label": "Начало"},
-    {"id": 2, "shape": "task", "label": "Проверка заявки"},
-    {"id": 3, "shape": "end", "label": "Завершение"}
+    {"id": 1, "shape": "activity", "label": "Заполнение анкеты"},
+    {"id": 2, "shape": "activity", "label": "Проверка заявки"},
+    {"id": 3, "shape": "gateway", "label": "Одобрено?"}
   ],
   "edges": [
     {"source": 1, "target": 2},
@@ -219,15 +219,15 @@ Input Diagram:
   ]
 }
 
-User Request: Добавь задачу "Верификация логистики" между "Проверка заявки" и "Завершение".
+User Request: Добавь задачу "Верификация логистики" между "Проверка заявки" и "Одобрено?".
 
 Output:
 {
   "nodes": [
-    {"id": 1, "shape": "start", "label": "Начало"},
-    {"id": 2, "shape": "task", "label": "Проверка заявки"},
-    {"id": 4, "shape": "task", "label": "Верификация логистики"},
-    {"id": 3, "shape": "end", "label": "Завершение"}
+    {"id": 1, "shape": "activity", "label": "Заполнение анкеты"},
+    {"id": 2, "shape": "activity", "label": "Проверка заявки"},
+    {"id": 4, "shape": "activity", "label": "Верификация логистики"},
+    {"id": 3, "shape": "gateway", "label": "Одобрено?"}
   ],
   "edges": [
     {"source": 1, "target": 2},
@@ -244,7 +244,7 @@ User Request: Добавь задачу "Логистика"
 Output:
 {
   "nodes": [
-    {"id": 5, "shape": "task", "label": "Логистика"}
+    {"id": 5, "shape": "activity", "label": "Логистика"}
   ],
   "edges": []
 }
@@ -257,12 +257,25 @@ Why it's bad:
 ---
 
 ✅ GOOD EXAMPLE 2  
-User Request: Удали задачу "Проверка заявки".
 
+Input:
+{
+  "nodes": [
+    {"id": 1, "shape": "event", "label": "Получение информации"},
+    {"id": 2, "shape": "activity", "label": "Проверка заявки"},
+    {"id": 3, "shape": "gateway", "label": "Одобрено?"}
+  ],
+  "edges": [
+    {"source": 1, "target": 2},
+    {"source": 1, "target": 3}
+  ]
+}
+
+User Request: Удали задачу "Проверка заявки".
 Output:
 {
   "nodes": [
-    {"id": 1, "shape": "start", "label": "Начало"},
+    {"id": 1, "shape": "event", "label": "Получение информации"},
     {"id": 3, "shape": "end", "label": "Завершение"}
   ],
   "edges": [
