@@ -20,7 +20,6 @@ def generate_bpmn_diagram(input_data: BPMNGenerationInput, process_query: str = 
     graph = GenerationGraph()
 
     state = graph(state)
-
     state["user_input"] = input_data
 
     # Нужна будет база данных для хранения состояний контекста
@@ -28,9 +27,9 @@ def generate_bpmn_diagram(input_data: BPMNGenerationInput, process_query: str = 
 
     state = graph(state)
 
-    return {"data": x6_layout(BPMNGenerationOutput(
-        bpmn=state["bpmn"]
-    ))}
+    return {"bpmn": x6_layout(
+        state["bpmn"]
+    )}
 
 
 @router.post("/text", summary="Получить граф", response_model=BPMNGenerationOutput)

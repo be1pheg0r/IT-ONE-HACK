@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Dict, Any
+from typing import Dict, Any, List, Union
 
 
 class BPMNGenerationInput(BaseModel):
@@ -22,14 +22,14 @@ class BPMNGenerationOutput(BaseModel):
     Результат генерации BPMN диаграммы
 
     Attributes:
-        bpmn: Сгенерированная диаграмма в формате JSON
+        bpmn: Сгенерированная диаграмма в формате JSON (может быть словарем или списком)
     """
 
-    bpmn: Dict[str, Any] = Field(
+    bpmn: Union[Dict[str, Any], List[Dict[str, Any]]] = Field(
         ...,
         example={
             "nodes": [{"id": "start", "type": "startEvent"}],
             "edges": []
         },
-        description="BPMN диаграмма в формате JSON"
+        description="BPMN диаграмма в формате JSON (может быть словарем или списком словарей)"
     )

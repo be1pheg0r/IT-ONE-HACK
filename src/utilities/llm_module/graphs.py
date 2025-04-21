@@ -1,3 +1,5 @@
+from src.utilities.llm_module.src.markup_to_x6 import x6_layout
+from src.utilities.llm_module.states import generation
 import logging
 from langgraph.graph import StateGraph, START, END
 from src.utilities.llm_module.states import GenerationState
@@ -19,11 +21,11 @@ class GenerationGraph:
         """
         В графе используются состояния с фикс. схемой (см. states.py)
         """
+
         self.graph = StateGraph(GenerationState)
         self._build_graph()
 
     def _build_graph(self):
-        
         """
         Просто добавление нод, времени почти не занимает
         """
@@ -36,9 +38,9 @@ class GenerationGraph:
 
         self.graph.add_conditional_edges(START, self.entry_condition,
                                          {
-                                                "verifier": "verifier",
+                                             "verifier": "verifier",
                                              "clarifier": "clarifier",
-                                                "bpmn_condition": "bpmn_condition"
+                                             "bpmn_condition": "bpmn_condition"
                                          })
 
         self.graph.add_edge("x6processor", END)
@@ -46,20 +48,19 @@ class GenerationGraph:
 
         self.graph.add_conditional_edges("verifier", self.verifier_condition,
                                          {
-                                                "clarifier": "clarifier",
-                                                END: END
+                                             "clarifier": "clarifier",
+                                             END: END
                                          })
 
         self.graph.add_conditional_edges("clarifier", self.clarifier_condition,
                                          {
-                                                "user_input_exit": END,
-                                                "bpmn_condition": "bpmn_condition"
+                                             "user_input_exit": END,
+                                             "bpmn_condition": "bpmn_condition"
                                          })
         self.graph.add_conditional_edges("bpmn_condition", self.bpmn_condition, {
-                                                "editor": "editor",
-                                                "x6processor": "x6processor"
-                                         })
-
+            "editor": "editor",
+            "x6processor": "x6processor"
+        })
 
     def __call__(self, state: GenerationState) -> GenerationState:
         """
@@ -69,17 +70,18 @@ class GenerationGraph:
             state = generation("Сделай мне диаграмму BPMN для процесса найма сотрудников")
             state = generator(state)
         """
+
         logger.info(f"Processing state: {state}")
         graph = self.compile()
         state = graph.invoke(state)
         logger.info(f"State after processing: {state}")
         return state
 
-
     def compile(self):
         """
         Для использования граф надо скомпилировать, это не занимает времени почти
         """
+
         logger.info("Compiling the graph")
         graph = self.graph.compile()
         logger.info("Graph compiled")
@@ -97,6 +99,7 @@ class GenerationGraph:
         если пришла обратная связь от пользователя (суть в том, что механика общей связи становится общей и
         можно придумывать еще ноды, использующие ее)
         """
+
         logger.info("Entry condition check")
         last = state["last"][1]
         if last in ["x6processor", "editor"]:
@@ -115,6 +118,7 @@ class GenerationGraph:
         Агент возвращает месседж с верификации
         state["agents_result"]["verifier"][-1]["result"].get("reason")
         """
+
         state["last"] = ["generator", "verifier"]
         logger.info("Verifier agent is processing")
         verifier = Verifier(context=state["context"])
@@ -127,6 +131,7 @@ class GenerationGraph:
         """
         Проход/выход из ноды верификации
         """
+
         logger.info("Verifier agent condition check")
         if state["agents_result"]["verifier"][-1]["result"].get("is_bpmn_request"):
             return "clarifier"
@@ -143,6 +148,7 @@ class GenerationGraph:
         Месседж с вопросом:
         state["agents_result"][-1]["clarifier"]["result"].get("clarification")
         """
+
         state["last"] = ["generator", "clarifier"]
         logger.info("Clarifier agent is processing")
         if state["clarification_num_iterations"] <= 0:
@@ -159,6 +165,7 @@ class GenerationGraph:
         """
         Выход/проход из кларифаера
         """
+
         logger.info("Clarifier agent condition check")
         if state["await_user_input"]:
             logger.info("User input exit condition met")
@@ -174,6 +181,7 @@ class GenerationGraph:
         во-первых, промптом
         во-вторых, ...)
         """
+
         state["last"] = ["generator", "x6processor"]
         logger.info("X6Processor agent is processing")
         x6processor = X6Processor(context=state["context"])
@@ -189,6 +197,7 @@ class GenerationGraph:
         только со структурой графа, т.е. существованием нод и их связями,
         расположение определяется сторонней функцией
         """
+
         state["last"] = ["generator", "editor"]
         logger.info("Editor agent is processing")
         editor = Editor(context=state["context"])
@@ -202,6 +211,7 @@ class GenerationGraph:
         """
         просто заглушка между условиями, функционала нет
         """
+
         return state
 
     @staticmethod
@@ -212,67 +222,10 @@ class GenerationGraph:
         связанных с удалением графа полностью
         Внешне также нужно для обработки ошибок
         """
+
         logger.info("Generation agent check")
         if state["bpmn"] != {"nodes": [], "edges": []}:
             logger.info("BPMN is present")
             return "editor"
         logger.info("BPMN is not present")
         return "x6processor"
-
-
-query = ("""
-Сделай мне диаграмму BPMN для процесса онбординга нового сотрудника.  
-Я хочу, чтобы она была на русском языке, включала ветвления по условиям и циклы там, где это необходимо.  
-Сделай процесс логичным и понятным. Добавь все нужные элементы.
-
-Список элементов:
-1. Начало процесса  
-2. Подготовка рабочего места  
-3. Отправка приветственного письма  
-4. Проведение вводного инструктажа  
-5. Проверка — прошёл ли сотрудник инструктаж?  
-   - Если нет, повторить инструктаж  
-6. Назначение наставника  
-7. Проведение первых задач  
-8. Оценка результата выполнения первых задач  
-   - Если результат неудовлетворительный, вернуться к обучению  
-9. Подписание всех необходимых документов  
-10. Завершение онбординга  
-11. Конец процесса""")
-
-from src.utilities.llm_module.states import generation
-from src.utilities.llm_module.test import visualize_bpmn_graph
-from src.utilities.llm_module.src.markup_to_x6 import x6_layout
-
-
-state = generation(
-    user_input=query,
-)
-
-graph = GenerationGraph()
-
-state = graph(state)
-
-visualize_bpmn_graph(x6_layout(state["bpmn"]), "1")
-
-state["user_input"] = "Добавь в нее еще 5 элементов по теме диаграммы"
-state["await_user_input"] = False
-state = graph(state)
-
-layout_result = x6_layout(state["bpmn"])
-print(layout_result)
-visualize_bpmn_graph(layout_result, "2")
-
-
-state["user_input"] = "БОТ уничтожь диаграмму"
-state["await_user_input"] = False
-
-state = graph(state)
-
-state["user_input"] = "Бот верни диаграмму но на испанском языке"
-
-state["await_user_input"] = False
-
-state = graph(state)
-
-visualize_bpmn_graph(x6_layout(state["bpmn"]), "3")
