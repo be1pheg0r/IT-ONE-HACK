@@ -306,7 +306,7 @@ MODELS = {
     "mistral": mistral_model
 }
 
-X6_CANVAS_SHAPE = [600, 600]
+X6_CANVAS_SHAPE = [800, 450]
 
 LANGUAGES = [
     'en', 'es', 'fr', 'de', 'it', 'ru', 'pt', 'nl', 'pl', 'tr', 'zh', 'ar'

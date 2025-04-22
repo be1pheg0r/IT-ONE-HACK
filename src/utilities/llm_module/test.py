@@ -54,44 +54,47 @@ def render_langgraph_graphviz(compiled_graph, filename="langgraph_graph", format
     if show_in_notebook:
         display(Image(filename=output_path))
 
+import graphviz
+from src.utilities.llm_module.llm_constants import X6_CANVAS_SHAPE
 
-def visualize_bpmn_graph(nodes_and_edges, filename="bpmn_graph", format="png", show=True):
-    dot = Digraph(format=format)
+def visualize_bpmn_graph(data, name: str):
+    # Конвертируем пиксели в дюймы (Graphviz работает в дюймах, 1 дюйм = 72 пикселя)
+    width_inch = X6_CANVAS_SHAPE[0] / 72
+    height_inch = X6_CANVAS_SHAPE[1] / 72
 
-    # Маппинг форм BPMN на формы Graphviz
-    shape_map = {
-        "start": "circle",
-        "end": "doublecircle",
-        "task": "box",
-        "gateway": "diamond"
-    }
+    dot = graphviz.Digraph(
+        format='png',
+        engine='dot',
+        graph_attr={
+            'rankdir': 'LR',
+            'size': f'{width_inch},{height_inch}!',
+            'dpi': '150',
+            'nodesep': '0.5',
+            'ranksep': '0.75'
+        }
+    )
 
-    # Отдельно собираем узлы и рёбра
-    nodes = []
-    edges = []
-    for i, element in enumerate(nodes_and_edges):
-        if element["shape"] == "bpmn-edge":
-            edges.append(element)
-        else:
-            nodes.append(element)
+    for item in data:
+        if item['shape'] == 'bpmn-edge':
+            continue
+        node_id = item['id']
+        label = item['label']
+        shape = 'ellipse' if item['shape'] in ['start', 'end'] else 'box'
+        dot.node(
+            str(node_id),
+            label=label,
+            shape=shape,
+            width=str(item.get('width', 1.5) / 72),
+            height=str(item.get('height', 1.0) / 72)
+        )
 
-    # Добавляем узлы
-    for node in nodes:
-        shape = shape_map.get(node["shape"], "box")
-        label = node.get("label", str(node["id"]))
-        dot.node(str(node["id"]), label=label, shape=shape, style="filled", fillcolor="#f0f0ff")
+    for item in data:
+        if item['shape'] == 'bpmn-edge':
+            dot.edge(str(item['source']), str(item['target']))
 
-    # Добавляем рёбра
-    for edge in edges:
-        dot.edge(str(edge["source"]), str(edge["target"]))
+    dot.render(name, format="png", cleanup=True)
+    return dot
 
-    output_path = dot.render(filename, cleanup=True)
-    print(f"Graph saved to {output_path}")
-
-    if show:
-        display(Image(filename=output_path))
-
-    return output_path
 
 
 # Твоя функция вызова
