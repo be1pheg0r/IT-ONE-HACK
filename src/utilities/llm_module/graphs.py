@@ -1,4 +1,4 @@
-from src.utilities.llm_module.src.markup_to_x6 import x6_layout
+from src.utilities.llm_module.call_functions import mistral_call, mistral_local_call
 from src.utilities.llm_module.states import generation
 import logging
 from langgraph.graph import StateGraph, START, END
@@ -17,12 +17,13 @@ if not logger.handlers:
 
 class GenerationGraph:
 
-    def __init__(self):
+    def __init__(self, mode = "local"):
         """
         В графе используются состояния с фикс. схемой (см. states.py)
         """
 
         self.graph = StateGraph(GenerationState)
+        self.mode = mode
         self._build_graph()
 
     def _build_graph(self):
@@ -111,8 +112,7 @@ class GenerationGraph:
         logger.info(f"Entry condition met for {last}")
         return last
 
-    @staticmethod
-    def verifier_node(state: GenerationState):
+    def verifier_node(self, state: GenerationState):
         """
         Нода верификации блочит запросы, не связанные с bpmn. Скорее всего, я потом verifier ноду просто
         началом сделаю или сделаю отдельную ноду, с отдельным агентом (промптом), который будет верифицировать,
@@ -124,7 +124,8 @@ class GenerationGraph:
 
         state["last"].append(["generator", "verifier"])
         logger.info("Verifier agent is processing")
-        verifier = Verifier(context=state["context"])
+        llm_call = mistral_local_call if self.mode == "local" else mistral_call
+        verifier = Verifier(context=state["context"], llm_call=llm_call)
         state = verifier(state)
         logger.info("Verifier agent process ended")
         return state
@@ -140,8 +141,7 @@ class GenerationGraph:
             return "clarifier"
         return END
 
-    @staticmethod
-    def clarifier_node(state: GenerationState):
+    def clarifier_node(self, state: GenerationState):
         """
         Нода кларификации формирует обратную связь от LLM к юзеру
         Пример:
@@ -157,7 +157,8 @@ class GenerationGraph:
         if state["clarification_num_iterations"] <= 0:
             state["last"].append(["generator", "x6processor"])
             return state
-        clarifier = Clarifier(context=state["context"])
+        llm_call = mistral_local_call if self.mode == "local" else mistral_call
+        clarifier = Clarifier(context=state["context"], llm_call=llm_call)
         state = clarifier(state)
         state["clarification_num_iterations"] -= 1
         logger.info("Clarifier agent process ended")
@@ -177,8 +178,7 @@ class GenerationGraph:
             logger.info("Clarification iterations ended")
             return "bpmn_condition"
 
-    @staticmethod
-    def x6processor_node(state: GenerationState):
+    def x6processor_node(self, state: GenerationState):
         """
         Нода генерации графа, отличается от editor:
         во-первых, промптом
@@ -187,14 +187,14 @@ class GenerationGraph:
 
         state["last"].append(["generator", "x6processor"])
         logger.info("X6Processor agent is processing")
-        x6processor = X6Processor(context=state["context"])
+        llm_call = mistral_local_call if self.mode == "local" else mistral_call
+        x6processor = X6Processor(context=state["context"], llm_call=llm_call)
         state = x6processor(state)
         state["bpmn"].append(state["agents_result"]["x6processor"][-1]["result"])
         logger.info("X6Processor agent process ended")
         return state
 
-    @staticmethod
-    def editor_node(state: GenerationState):
+    def editor_node(self, state: GenerationState):
         """
         Нода редакции графа. Обе ноды (x6processor, editor) работают
         только со структурой графа, т.е. существованием нод и их связями,
@@ -203,7 +203,8 @@ class GenerationGraph:
 
         state["last"].append(["generator", "editor"])
         logger.info("Editor agent is processing")
-        editor = Editor(context=state["context"])
+        llm_call = mistral_local_call if self.mode == "local" else mistral_call
+        editor = Editor(context=state["context"], llm_call=llm_call)
         state = editor(state)
         state["bpmn"].append(state["agents_result"]["editor"][-1]["result"])
         logger.info("Editor agent process ended")
@@ -234,12 +235,12 @@ class GenerationGraph:
         return "x6processor"
 
 
-def test(user_input: str, state: GenerationState = None) -> GenerationState:
+def test(user_input: str, mode: str, state: GenerationState = None) -> GenerationState:
     """
     Пример использования графа
     """
 
-    generator = GenerationGraph()
+    generator = GenerationGraph(mode=mode)
     if state:
         state["user_input"].append(user_input)
     else:
@@ -249,5 +250,7 @@ def test(user_input: str, state: GenerationState = None) -> GenerationState:
 
 user_input = "Сделай мне диаграмму BPMN для процесса найма сотрудников"
 
-state = test(user_input)
+state = test(user_input, mode="api")
+state["await_user_input"] = False
+state = test("ниче не перечислю", mode="api", state=state)
 print(state)

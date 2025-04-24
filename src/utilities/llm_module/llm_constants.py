@@ -33,32 +33,30 @@ Rejections should be in language has
 """
 
 system_clarification_prompt = """
-You are an expert in BPMN diagrams. Your activity is to clarify the user's request for generating a Business Process Model and Notation (BPMN) diagram.
+You are an expert in BPMN diagrams. Your task is to clarify the user's request **only in terms of the process steps** needed for generating a Business Process Model and Notation (BPMN) diagram.
 
-Your answer MUST be a valid JSON object. ⚠️ DO NOT use markdown formatting like ```json or any other wrappers.
+⚠️ Your answer MUST be a valid JSON object. DO NOT use markdown formatting like ```json or any other wrappers. Do not include any text outside of the JSON. The output must be fully parsable using `json.loads()`.
 
-Return your answer strictly in the following JSON format:
+Your response format must be:
 
 {
   "await_user_input": true/false,
   "clarification": "your question or 'nothing'"
 }
 
-Do not include any text outside of the JSON. The output must be fully parsable using `json.loads()`.
-
-If you need clarification from the user, set "await_user_input" to true and ask a clear, specific question.
+Ask for clarification **only if the user did not specify the individual steps of the process** (e.g., "Получение заявки", "Проверка наличия товара", "Отправка клиенту"). Your clarification should ask them to provide these **explicitly as a sequence of process steps**.
 
 ################################################################################################
 ✅ Good Examples:
 
-User: Сделай мне диаграмму BPMN для процесса найма сотрудников  
+User: Сделай мне диаграмму BPMN для процесса увольнения сотрудника  
 Assistant:
 {
   "await_user_input": true,
-  "clarification": "Какой именно процесс найма сотрудников вас интересует? Пожалуйста, уточните детали."
+  "clarification": "Пожалуйста, перечислите этапы процесса увольнения сотрудника — например: уведомление, подписание бумаг, передача дел."
 }
 
-User: Мне нужно смоделировать процесс обработки заказа в интернет-магазине...  
+User: Процесс состоит из этапов: заказ получен, проверка оплаты, отправка  
 Assistant:
 {
   "await_user_input": false,
@@ -71,20 +69,21 @@ Assistant:
 ```json
 {
   "await_user_input": true,
-  "clarification": "Какой именно процесс найма сотрудников вас интересует?"
+  "clarification": "Какой именно процесс увольнения сотрудника вас интересует?"
 }
 #####################################################################################################
 Clarification questions should be in language has
 """
 
 system_x6processing_prompt = """
-Your activity is to generate or edit a structured BPMN diagram based on the user's request.
+Your activity is to generate a structured BPMN diagram based on the user's request.
 
 You will receive:
 - A user instruction in natural language.
-- Optionally, an existing diagram in JSON format (with `nodes` and `edges`).
 
-Respond with a **strict JSON** object representing the resulting BPMN diagram **after applying any requested changes**.
+Your task is to create a complete and logically valid BPMN diagram from scratch.
+
+Respond with a **strict JSON** object representing the resulting BPMN diagram.
 
 🟢 Output format:
 
@@ -101,77 +100,12 @@ Respond with a **strict JSON** object representing the resulting BPMN diagram **
 }
 
 ⚠️ Important rules:
-- If a diagram is provided in the request, use it as a base and apply modifications to it.
-- If no diagram is provided, generate a new one based on the request.
 - DO NOT wrap your output in markdown (no ```json).
 - Output must be valid JSON (parsable by `json.loads()`).
 - All "label" values must be in the same language as the user's request.
-- Diagram must be logically valid: all elements connected, with one clear start and end.
+- Diagram must be logically valid: all elements must be connected, with one clear start and one clear end.
 - Only allowed shapes: ["event", "activity", "gateway"]
 - Node `id` values must be unique integers.
-
----
-
-✅ GOOD EXAMPLE 1  
-User Request: Добавь задачу "Верификация логистики" между "Проверка заявки" и "Завершение".
-
-Existing Diagram:
-{
-  "nodes": [
-    {"id": 1, "shape": "event", "label": "Получение данных"},
-    {"id": 2, "shape": "activity", "label": "Проверка заявки"},
-    {"id": 3, "shape": "activity", "label": "Верификация процесса"}
-  ],
-  "edges": [
-    {"source": 1, "target": 2},
-    {"source": 2, "target": 3}
-  ]
-}
-
-Output:
-{
-  "nodes": [
-    {"id": 1, "shape": "event", "label": "Импорт реквизитов"},
-    {"id": 2, "shape": "activity", "label": "Проверка заявки"},
-    {"id": 4, "shape": "activity", "label": "Верификация логистики"},
-    {"id": 3, "shape": "gateway", "label": "Условие наличия"}
-  ],
-  "edges": [
-    {"source": 1, "target": 2},
-    {"source": 2, "target": 4},
-    {"source": 4, "target": 3}
-  ]
-}
-
----
-
-❌ BAD EXAMPLE  
-User Request: Добавь задачу "Логистика"
-
-Output:
-{
-  "nodes": [{"id": 1, "shape": "activity", "label": "Логистика"}],
-  "edges": []
-}
-Why it's bad:
-- Node is disconnected.
-- No context (no base diagram).
-- Output is incomplete.
-
-----------------------------------------------
-
-User Request: Убери задачу "Доставка"
-
-Output:
-```json
-{
-    "nodes": [...],
-    "edges": [...]
-}
-```
-
-Why it's bad:
-- Markdown markup (it's forbidden)
 
 ############################################################################
 
@@ -301,12 +235,15 @@ GENERATION_NUM_ITERATIONS = 2
 
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 
-mistral_model = os.getenv("MISTRAL_MODEL")
+mistral_api_model = os.getenv("MISTRAL_API_MODEL")
+mistral_local_model = os.getenv("MISTRAL_LOCAL_MODEL")
+
 MODELS = {
-    "mistral": mistral_model
+    "mistral_api": mistral_api_model,
+    "mistral_local": mistral_local_model
 }
 
-X6_CANVAS_SHAPE = [600, 600]
+X6_CANVAS_SHAPE = [800, 450]
 
 LANGUAGES = [
     'en', 'es', 'fr', 'de', 'it', 'ru', 'pt', 'nl', 'pl', 'tr', 'zh', 'ar'

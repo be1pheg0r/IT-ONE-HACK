@@ -1,6 +1,6 @@
 from src.utilities.llm_module.base_agent import BaseAgent
+from src.utilities.llm_module.call_functions import mistral_call
 from src.utilities.llm_module.llm_constants import PROMPTS, MISTRAL_API_KEY, MODELS
-from mistralai import Mistral
 from typing import List, Optional
 import logging
 
@@ -12,23 +12,6 @@ if not logger.handlers:
     formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
-
-CLIENT = Mistral(api_key=MISTRAL_API_KEY)
-
-
-def mistral_call(messages: List[dict]) -> str:
-    passed = False
-    while not passed:
-        try:
-            response = CLIENT.chat.complete(
-                model=MODELS["mistral"],
-                messages=messages,
-                safe_prompt=True
-            )
-            return response.choices[0].message.content
-        except:
-            continue
-
 
 class Verifier(BaseAgent):
     def __init__(self, system_prompt: str = PROMPTS["verification"], llm_call: callable = mistral_call,

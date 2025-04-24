@@ -29,7 +29,7 @@ class BaseAgent(ABC):
             f"{self._agent_role()} initialized. History length: {len(self.history)}")
 
     def __call__(self, state: Dict) -> Dict:
-        user_input = state.get("user_input", "")
+        user_input = state["user_input"][-1]
         logger.info(f"[{self._agent_role()}] Received input: {user_input}")
 
         self.history.append(UserMessage(content=user_input))
