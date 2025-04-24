@@ -21,9 +21,10 @@ langid.set_languages(LANGUAGES)
 
 class BaseAgent(ABC):
     def __init__(self, system_prompt: str, llm_call: Callable,
-                 context: Optional[List] = None):
+                 context: Optional[List] = None, local_model_cfg: Optional[Dict] = None):
         self.system_prompt = system_prompt
         self.llm_call = llm_call
+        self.local_model_cfg = local_model_cfg
         self.history: List = context if context is not None else []
         logger.debug(
             f"{self._agent_role()} initialized. History length: {len(self.history)}")
@@ -42,7 +43,10 @@ class BaseAgent(ABC):
         messages = [sys_msg] + self.history
 
         try:
-            raw_response = self.llm_call(messages=messages)
+            if not self.local_model_cfg and self.llm_call.__name__ == "mistral_call":
+                raw_response = self.llm_call(messages=messages)
+            else:
+                raw_response = self.llm_call(messages=messages, local_model_cfg=self.local_model_cfg)
             logger.debug(
                 f"[{self._agent_role()}] LLM raw response: {raw_response}")
             response = self._process_response(raw_response)

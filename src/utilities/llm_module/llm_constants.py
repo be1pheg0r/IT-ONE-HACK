@@ -233,8 +233,8 @@ PROMPTS = {
 CLARIFICATION_NUM_ITERATIONS = 1
 GENERATION_NUM_ITERATIONS = 2
 
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 mistral_api_model = os.getenv("MISTRAL_API_MODEL")
 mistral_local_model = os.getenv("MISTRAL_LOCAL_MODEL")
 

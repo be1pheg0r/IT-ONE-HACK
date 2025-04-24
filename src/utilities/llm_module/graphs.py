@@ -17,13 +17,16 @@ if not logger.handlers:
 
 class GenerationGraph:
 
-    def __init__(self, mode = "local"):
+    def __init__(self, mode = "local", local_model_cfg: dict = None):
         """
         В графе используются состояния с фикс. схемой (см. states.py)
         """
 
         self.graph = StateGraph(GenerationState)
         self.mode = mode
+        if self.mode == "local" and not local_model_cfg:
+            raise "tik tok"
+        self.local_model_cfg = local_model_cfg
         self._build_graph()
 
     def _build_graph(self):
@@ -125,7 +128,11 @@ class GenerationGraph:
         state["last"].append(["generator", "verifier"])
         logger.info("Verifier agent is processing")
         llm_call = mistral_local_call if self.mode == "local" else mistral_call
-        verifier = Verifier(context=state["context"], llm_call=llm_call)
+        if self.local_model_cfg and llm_call == mistral_local_call:
+            local_model_cfg = self.local_model_cfg
+        else:
+            local_model_cfg = None
+        verifier = Verifier(context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
         state = verifier(state)
         logger.info("Verifier agent process ended")
         return state
@@ -158,7 +165,11 @@ class GenerationGraph:
             state["last"].append(["generator", "x6processor"])
             return state
         llm_call = mistral_local_call if self.mode == "local" else mistral_call
-        clarifier = Clarifier(context=state["context"], llm_call=llm_call)
+        if self.local_model_cfg and llm_call == mistral_local_call:
+            local_model_cfg = self.local_model_cfg
+        else:
+            local_model_cfg = None
+        clarifier = Clarifier(context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
         state = clarifier(state)
         state["clarification_num_iterations"] -= 1
         logger.info("Clarifier agent process ended")
@@ -188,7 +199,11 @@ class GenerationGraph:
         state["last"].append(["generator", "x6processor"])
         logger.info("X6Processor agent is processing")
         llm_call = mistral_local_call if self.mode == "local" else mistral_call
-        x6processor = X6Processor(context=state["context"], llm_call=llm_call)
+        if self.local_model_cfg and llm_call == mistral_local_call:
+            local_model_cfg = self.local_model_cfg
+        else:
+            local_model_cfg = None
+        x6processor = X6Processor(context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
         state = x6processor(state)
         state["bpmn"].append(state["agents_result"]["x6processor"][-1]["result"])
         logger.info("X6Processor agent process ended")
@@ -204,7 +219,11 @@ class GenerationGraph:
         state["last"].append(["generator", "editor"])
         logger.info("Editor agent is processing")
         llm_call = mistral_local_call if self.mode == "local" else mistral_call
-        editor = Editor(context=state["context"], llm_call=llm_call)
+        if self.local_model_cfg and llm_call == mistral_local_call:
+            local_model_cfg = self.local_model_cfg
+        else:
+            local_model_cfg = None
+        editor = Editor(context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
         state = editor(state)
         state["bpmn"].append(state["agents_result"]["editor"][-1]["result"])
         logger.info("Editor agent process ended")
@@ -228,29 +247,29 @@ class GenerationGraph:
         """
 
         logger.info("Generation agent check")
-        if state["bpmn"][-1] != {"nodes": [], "edges": []}:
+        if state["bpmn"][-1] != [{"nodes": [], "edges": []}]:
             logger.info("BPMN is present")
             return "editor"
         logger.info("BPMN is not present")
         return "x6processor"
 
 
-def test(user_input: str, mode: str, state: GenerationState = None) -> GenerationState:
+def test(user_input: str, mode: str, local_model_cfg = None, state: GenerationState = None) -> GenerationState:
     """
     Пример использования графа
     """
 
-    generator = GenerationGraph(mode=mode)
+    generator = GenerationGraph(mode=mode, local_model_cfg=local_model_cfg)
     if state:
         state["user_input"].append(user_input)
     else:
         state = generation(user_input=user_input)
     state = generator(state)
     return state
-
-user_input = "Сделай мне диаграмму BPMN для процесса найма сотрудников"
-
-state = test(user_input, mode="api")
-state["await_user_input"] = False
-state = test("ниче не перечислю", mode="api", state=state)
-print(state)
+#
+# user_input = "Сделай мне диаграмму BPMN для процесса найма сотрудников"
+#
+# state = test(user_input, mode="api")
+# state["await_user_input"] = False
+# state = test("ниче не перечислю", mode="api", state=state)
+# print(state)

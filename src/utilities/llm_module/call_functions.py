@@ -1,18 +1,14 @@
 from mistralai import Mistral
 from mistralai.models import SystemMessage, UserMessage, AssistantMessage
-from src.utilities.llm_module.llm_constants import PROMPTS, MISTRAL_API_KEY, MODELS
+from src.utilities.llm_module.llm_constants import MISTRAL_API_KEY, MODELS
 from typing import List, Dict, Union
 import torch
-from langchain.prompts.chat import ChatPromptTemplate
-from transformers import AutoTokenizer, TextStreamer
 import logging
 
 # Настройка логирования
 logger = logging.getLogger("Mistral")
 logger.setLevel(logging.DEBUG)
 
-
-CLIENT = Mistral(api_key=MISTRAL_API_KEY)
 
 def _preprocess_context(context: List[Union[UserMessage, SystemMessage, AssistantMessage]]) -> List[Dict[str, str]]:
     """
@@ -26,9 +22,10 @@ def _preprocess_context(context: List[Union[UserMessage, SystemMessage, Assistan
 
 def mistral_call(messages: List[Union[UserMessage, SystemMessage, AssistantMessage]]) -> str:
     passed = False
+    client = Mistral(api_key=MISTRAL_API_KEY)
     while not passed:
         try:
-            response = CLIENT.chat.complete(
+            response = client.chat.complete(
                 model=MODELS["mistral_api"],
                 messages=messages,
                 safe_prompt=True
@@ -38,10 +35,13 @@ def mistral_call(messages: List[Union[UserMessage, SystemMessage, AssistantMessa
             # logger.exception(f"Error during Mistral API call: {e}")
             continue
 
-def mistral_local_call(messages: List[Union[UserMessage, SystemMessage, AssistantMessage]], model, tokenizer) -> str:
+
+def mistral_local_call(messages: List[Union[UserMessage, SystemMessage, AssistantMessage]], local_model_cfg) -> str:
     """
     Функция для вызова модели Mistral local с использованием библиотеки transformers.
     """
+    model = local_model_cfg["model"]
+    tokenizer = local_model_cfg["tokenizer"]
     prompt = tokenizer.apply_chat_template(_preprocess_context(messages), tokenize=False, add_generation_prompt=True)
     inputs = tokenizer(prompt, return_tensors="pt")
     with torch.no_grad():
@@ -52,6 +52,6 @@ def mistral_local_call(messages: List[Union[UserMessage, SystemMessage, Assistan
             temperature=0.7,
             top_p=0.95,
             pad_token_id=tokenizer.eos_token_id
-    )
-    output_text = model.decode(tokens[0], skip_special_tokens=True)
+        )
+    output_text = tokenizer.decode(tokens[0], skip_special_tokens=True)
     return output_text.split("assistant\n")[-1]
