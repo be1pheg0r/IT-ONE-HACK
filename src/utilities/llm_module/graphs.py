@@ -92,7 +92,7 @@ class GenerationGraph:
         """
         Условия в langgraph на вход принимают состояния, а выдают строки.
         entry_condition - входной роут, по состоянию определяющий направление
-        Если диаграмма есть | if last in ["x6processor", "editor"] |, то роут на bpmn_condition
+        Если диаграмма есть | if last[-1][1] in ["x6processor", "editor"] |, то роут на bpmn_condition
         Там проверяется, не нулевая ли диаграмма (это для запросов типа "Бот уничтожь диаграмму")
         Если диаграммы нет, то роут пойдет в диаграмму, на которой граф закончился - это для механики
         обратной связи, т.е. он всегда пойдет или в verifier, если это первый запрос, или в clarifier,
@@ -101,7 +101,10 @@ class GenerationGraph:
         """
 
         logger.info("Entry condition check")
-        last = state["last"][1]
+        if not state["last"]:
+            logger.info("First request, going to verifier")
+            return "verifier"
+        last = state["last"][-1][1]
         if last in ["x6processor", "editor"]:
             logger.info("Entry condition met for bpmn condition")
             return "bpmn_condition"
@@ -119,7 +122,7 @@ class GenerationGraph:
         state["agents_result"]["verifier"][-1]["result"].get("reason")
         """
 
-        state["last"] = ["generator", "verifier"]
+        state["last"].append(["generator", "verifier"])
         logger.info("Verifier agent is processing")
         verifier = Verifier(context=state["context"])
         state = verifier(state)
@@ -146,13 +149,13 @@ class GenerationGraph:
         Assistant: Что должно быть отражено в вашей диаграмме.
 
         Месседж с вопросом:
-        state["agents_result"][-1]["clarifier"]["result"].get("clarification")
+        state["agents_result"]["clarifier"][-1]["result"].get("clarification")
         """
 
-        state["last"] = ["generator", "clarifier"]
+        state["last"].append(["generator", "clarifier"])
         logger.info("Clarifier agent is processing")
         if state["clarification_num_iterations"] <= 0:
-            state["last"] = ["generator", "x6processor"]
+            state["last"].append(["generator", "x6processor"])
             return state
         clarifier = Clarifier(context=state["context"])
         state = clarifier(state)
@@ -182,11 +185,11 @@ class GenerationGraph:
         во-вторых, ...)
         """
 
-        state["last"] = ["generator", "x6processor"]
+        state["last"].append(["generator", "x6processor"])
         logger.info("X6Processor agent is processing")
         x6processor = X6Processor(context=state["context"])
         state = x6processor(state)
-        state["bpmn"] = state["agents_result"]["x6processor"][-1]["result"]
+        state["bpmn"].append(state["agents_result"]["x6processor"][-1]["result"])
         logger.info("X6Processor agent process ended")
         return state
 
@@ -198,11 +201,11 @@ class GenerationGraph:
         расположение определяется сторонней функцией
         """
 
-        state["last"] = ["generator", "editor"]
+        state["last"].append(["generator", "editor"])
         logger.info("Editor agent is processing")
         editor = Editor(context=state["context"])
         state = editor(state)
-        state["bpmn"] = state["agents_result"]["editor"][-1]["result"]
+        state["bpmn"].append(state["agents_result"]["editor"][-1]["result"])
         logger.info("Editor agent process ended")
         return state
 
@@ -224,8 +227,27 @@ class GenerationGraph:
         """
 
         logger.info("Generation agent check")
-        if state["bpmn"] != {"nodes": [], "edges": []}:
+        if state["bpmn"][-1] != {"nodes": [], "edges": []}:
             logger.info("BPMN is present")
             return "editor"
         logger.info("BPMN is not present")
         return "x6processor"
+
+
+def test(user_input: str, state: GenerationState = None) -> GenerationState:
+    """
+    Пример использования графа
+    """
+
+    generator = GenerationGraph()
+    if state:
+        state["user_input"].append(user_input)
+    else:
+        state = generation(user_input=user_input)
+    state = generator(state)
+    return state
+
+user_input = "Сделай мне диаграмму BPMN для процесса найма сотрудников"
+
+state = test(user_input)
+print(state)
