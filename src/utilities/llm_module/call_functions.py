@@ -44,6 +44,9 @@ def mistral_local_call(messages: List[Union[UserMessage, SystemMessage, Assistan
     tokenizer = local_model_cfg["tokenizer"]
     prompt = tokenizer.apply_chat_template(_preprocess_context(messages), tokenize=False, add_generation_prompt=True)
     inputs = tokenizer(prompt, return_tensors="pt")
+    device = next(model.parameters()).device
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+
     with torch.no_grad():
         tokens = model.generate(
             **inputs,
