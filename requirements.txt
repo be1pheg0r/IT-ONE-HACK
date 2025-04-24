@@ -1,17 +1,33 @@
+#📡 Веб-сервер и фреймворки
 fastapi==0.115.12
-faster_whisper==1.1.1
-langgraph==0.3.32
-langid==1.1.6
-mistralai==1.7.0
-networkx==3.4.2
-numpy==2.2.5
-PyAudio==0.2.14
+uvicorn==0.34.2
+python-dotenv==1.1.0
+python-decouple==3.8
 pydantic==2.11.3
 pydantic_settings==2.9.1
+
+#🤖 Машинное обучение и модели
+torch==2.5.1 # CPU,
+# CUDA 12.4: pip install torch==2.5.1+cu124 torchvision==0.20.1+cu124 torchaudio==2.5.1+cu124 --extra-index-url https://download.pytorch.org/whl/cu124
+transformers==4.47.1
+accelerate==1.6.0
+bitsandbytes==0.45.5
+autoawq==0.2.8
+mistralai==1.7.0
+langchain_community==0.3.22
+langgraph==0.3.34
+triton==3.3.0
+
+#🎤 Аудио и речь
+PyAudio==0.2.14
 pydub==0.25.1
-python-decouple==3.8
-python-dotenv==1.1.0
-torch==2.6.0
+faster_whisper==1.1.1
+
+#📊 Научные и математические библиотеки
+numpy==1.26.4
+networkx==3.4.2
+
+#🛠️ Утилиты и прочее
+langid==1.1.6
 tqdm==4.67.1
-typing_extensions==4.13.2
-uvicorn==0.34.2
+typing_extensions==4.13.1
