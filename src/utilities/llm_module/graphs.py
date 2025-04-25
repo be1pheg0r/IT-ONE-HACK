@@ -273,10 +273,3 @@ def test(user_input: str, mode: str, local_model_cfg=None, state: GenerationStat
         state = generation(user_input=user_input)
     state = generator(state)
     return state
-
-# user_input = "Сделай мне диаграмму BPMN для процесса найма сотрудников"
-#
-# state = test(user_input, mode="api")
-# state["await_user_input"] = False
-# state = test("ниче не перечислю", mode="api", state=state)
-# print(state)

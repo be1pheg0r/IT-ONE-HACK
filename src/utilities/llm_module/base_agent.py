@@ -45,7 +45,6 @@ class BaseAgent(ABC):
         try:
             if not self.local_model_cfg and self.llm_call.__name__ == "mistral_call":
                 raw_response = self.llm_call(messages=messages)
-                print(f"Raw response: {raw_response}")
             else:
                 raw_response = self.llm_call(messages=messages, local_model_cfg=self.local_model_cfg)
             logger.debug(

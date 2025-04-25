@@ -1,16 +1,27 @@
 from fastapi import APIRouter
 from src.utilities.llm_module.src.markup_to_x6 import x6_layout
 from src.utilities.llm_module.graphs import GenerationGraph
-from src.utilities.llm_module.states import GenerationState, generation
+from src.utilities.llm_module.states import generation
 from src.models.schemas.graphs_output import GenerationInput, GenerationOutput
-from src.utilities.llm_module.llm_constants import DEFAULT_HIRING_PROCESS_QUERY
+from awq import AutoAWQForCausalLM
+from transformers import AutoTokenizer
+
 
 router = APIRouter(prefix="/user_input", tags=["user_input"])
 
+model_path = "solidrust/Nous-Hermes-2-Mistral-7B-DPO-AWQ"
+
+model = AutoAWQForCausalLM.from_quantized(model_path, fuse_layers=True)
+tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+
+
 # только для MVP, потом заменить на бд
 STATE = None
-MODE = "api"
-LOCAL_MODEL_CFG = None
+MODE = "local"
+LOCAL_MODEL_CFG = {
+    "model": model,
+    "tokenizer": tokenizer,
+}
 
 
 def generate_output(input_data: str, mode: str, local_model_cfg=None) -> GenerationOutput:
