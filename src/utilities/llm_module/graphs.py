@@ -17,7 +17,7 @@ if not logger.handlers:
 
 class GenerationGraph:
 
-    def __init__(self, mode = "local", local_model_cfg: dict = None):
+    def __init__(self, mode="local", local_model_cfg: dict = None):
         """
         В графе используются состояния с фикс. схемой (см. states.py)
         """
@@ -25,7 +25,7 @@ class GenerationGraph:
         self.graph = StateGraph(GenerationState)
         self.mode = mode
         if self.mode == "local" and not local_model_cfg:
-            raise ValueError("local_model_cfg must be provided when mode is 'local'")
+            raise "tik tok"
         self.local_model_cfg = local_model_cfg
         self._build_graph()
 
@@ -132,7 +132,8 @@ class GenerationGraph:
             local_model_cfg = self.local_model_cfg
         else:
             local_model_cfg = None
-        verifier = Verifier(context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
+        verifier = Verifier(
+            context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
         state = verifier(state)
         logger.info("Verifier agent process ended")
         return state
@@ -169,7 +170,8 @@ class GenerationGraph:
             local_model_cfg = self.local_model_cfg
         else:
             local_model_cfg = None
-        clarifier = Clarifier(context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
+        clarifier = Clarifier(
+            context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
         state = clarifier(state)
         state["clarification_num_iterations"] -= 1
         logger.info("Clarifier agent process ended")
@@ -203,9 +205,11 @@ class GenerationGraph:
             local_model_cfg = self.local_model_cfg
         else:
             local_model_cfg = None
-        x6processor = X6Processor(context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
+        x6processor = X6Processor(
+            context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
         state = x6processor(state)
-        state["bpmn"].append(state["agents_result"]["x6processor"][-1]["result"])
+        state["bpmn"].append(state["agents_result"]
+                             ["x6processor"][-1]["result"])
         logger.info("X6Processor agent process ended")
         return state
 
@@ -223,7 +227,8 @@ class GenerationGraph:
             local_model_cfg = self.local_model_cfg
         else:
             local_model_cfg = None
-        editor = Editor(context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
+        editor = Editor(
+            context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
         state = editor(state)
         state["bpmn"].append(state["agents_result"]["editor"][-1]["result"])
         logger.info("Editor agent process ended")
@@ -254,7 +259,7 @@ class GenerationGraph:
         return "x6processor"
 
 
-def test(user_input: str, mode: str, local_model_cfg = None, state: GenerationState = None) -> GenerationState:
+def test(user_input: str, mode: str, local_model_cfg=None, state: GenerationState = None) -> GenerationState:
     """
     Пример использования графа
     """
