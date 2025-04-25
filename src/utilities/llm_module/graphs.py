@@ -25,7 +25,7 @@ class GenerationGraph:
         self.graph = StateGraph(GenerationState)
         self.mode = mode
         if self.mode == "local" and not local_model_cfg:
-            raise "tik tok"
+            raise ValueError("local_model_cfg must be provided when mode is 'local'")
         self.local_model_cfg = local_model_cfg
         self._build_graph()
 
