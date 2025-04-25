@@ -1,11 +1,11 @@
 from typing_extensions import TypedDict
 from src.utilities.llm_module.llm_constants import CLARIFICATION_NUM_ITERATIONS, GENERATION_NUM_ITERATIONS
-from typing import List, Dict
+from typing import List, Dict, Union
 
 
 class AgentResult(TypedDict, total=False):
-    result: dict
-    await_user_input: bool
+    flag: bool
+    content: Union[str, Dict]
 
 
 class BaseState(TypedDict):
@@ -31,7 +31,7 @@ class BaseState(TypedDict):
     user_input: List[str]
     last: List[List[str]]
     context: List[dict]
-    bpmn: List[List[dict]]
+    bpmn: List[Dict]
     agents_result: Dict[str, List[AgentResult]]
     await_user_input: bool
 
@@ -57,7 +57,7 @@ class GenerationState(BaseState):
 def generation(user_input: str,
                last: List[List[str]] = None,
                context: List[dict] = None,
-               bpmn: List[List[dict]] = None,
+               bpmn: List[Dict] = None,
                agents_result: Dict[str, List[AgentResult]] = None,
                await_user_input: bool = False) -> GenerationState:
     """
@@ -67,8 +67,13 @@ def generation(user_input: str,
         "user_input": [user_input],
         "last": last if last is not None else [],
         "context": context if context is not None else [],
-        "bpmn": bpmn if bpmn is not None else [[{"nodes": [], "edges": []}]],
-        "agents_result": agents_result if agents_result is not None else {},
+        "bpmn": bpmn if bpmn is not None else [{"nodes": [], "edges": []}],
+        "agents_result": agents_result if agents_result is not None else {
+            "clarifier": [],
+            "verifier": [],
+            "x6processor": [],
+            "editor": [],
+        },
         "await_user_input": await_user_input,
         "clarification_num_iterations": CLARIFICATION_NUM_ITERATIONS,
         "generation_num_iterations": GENERATION_NUM_ITERATIONS

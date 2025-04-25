@@ -2,37 +2,43 @@ from fastapi import APIRouter
 from src.utilities.llm_module.src.markup_to_x6 import x6_layout
 from src.utilities.llm_module.graphs import GenerationGraph
 from src.utilities.llm_module.states import GenerationState, generation
-from src.models.schemas.bpmn import BPMNGenerationInput, BPMNGenerationOutput
+from src.models.schemas.graphs_output import GenerationInput, GenerationOutput
 from src.utilities.llm_module.llm_constants import DEFAULT_HIRING_PROCESS_QUERY
-
 
 router = APIRouter(prefix="/user_input", tags=["user_input"])
 
+# только для MVP, потом заменить на бд
+STATE = None
+MODE = "api"
+LOCAL_MODEL_CFG = None
 
-def generate_bpmn_diagram(input_data: BPMNGenerationInput, mode: str, local_model_cfg=None, state: GenerationState = None) -> BPMNGenerationOutput:
+
+def generate_output(input_data: str, mode: str, local_model_cfg=None) -> GenerationOutput:
     """
     :param input_data: Входные параметры для генерации диаграммы
     :param process_query: Базовый промпт работы модели
     :return: BPMN диаграмма и дополнительная информация о процессе
     """
-
-    generator = GenerationGraph(mode='api', local_model_cfg='None')
-    if state:
-        state["user_input"].append(input_data)
+    global STATE
+    if not STATE:
+        STATE = generation(input_data)
     else:
-        state = generation(user_input=input_data)
-    state = generator(state)
+        STATE["user_input"].append(input_data)
 
-    return {"bpmn": x6_layout(
-        state["bpmn"][-1]
-    )}
+    graph = GenerationGraph(mode=mode, local_model_cfg=local_model_cfg)
+    STATE = graph(STATE)
+    last = STATE["last"][-1][1]
+    output = STATE["agents_result"][last][-1]["content"]
+    if last in ["x6processor", "editor"]:
+        output = x6_layout(output)
+    return GenerationOutput(output=output)
 
 
-@router.post("/text", summary="Получить граф", response_model=BPMNGenerationOutput)
-async def get_json_graph(user: BPMNGenerationInput) -> BPMNGenerationOutput:
+@router.post("/text", summary="Получить граф", response_model=GenerationOutput)
+async def get_json_graph(user: GenerationInput) -> GenerationOutput:
     """
     :param input_data: Входные параметры для генерации диаграммы
     :return: BPMN диаграмма и дополнительная информация о процессе
     """
 
-    return generate_bpmn_diagram(user.user_input, 'api')
+    return generate_output(user.user_input, 'api')

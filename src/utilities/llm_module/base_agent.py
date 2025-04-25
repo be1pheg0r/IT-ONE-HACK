@@ -45,6 +45,7 @@ class BaseAgent(ABC):
         try:
             if not self.local_model_cfg and self.llm_call.__name__ == "mistral_call":
                 raw_response = self.llm_call(messages=messages)
+                print(f"Raw response: {raw_response}")
             else:
                 raw_response = self.llm_call(messages=messages, local_model_cfg=self.local_model_cfg)
             logger.debug(
@@ -65,14 +66,31 @@ class BaseAgent(ABC):
         logger.debug(f"[{self._agent_role()}] Updated state context.")
         if self._agent_role() not in state["agents_result"].keys():
             state["agents_result"][self._agent_role()] = []
-        state["agents_result"][self._agent_role()].append({
-            "result": response,
-            "await_user_input": bool(response.get("await_user_input"))
-        })
 
-        if response.get("await_user_input"):
-            state["await_user_input"] = True
-            logger.info(f"[{self._agent_role()}] Awaiting user input set.")
+        parse_map = {
+            "verifier": {
+                "flag": response.get("is_bpmn_request", False),
+                "content": response.get("content", None)
+            },
+            "clarifier": {
+                "flag": response.get("await_user_input", False),
+                "content": response.get("content", None)
+            },
+            "x6processor": {
+                "flag": True,
+                "content": response
+            },
+            "editor": {
+                "flag": True,
+                "content": response
+            }
+        }
+        state["agents_result"][self._agent_role()].append(
+            {
+                "flag": parse_map[self._agent_role()]["flag"],
+                "content": parse_map[self._agent_role()]["content"]
+            }
+        )
 
         return state
 

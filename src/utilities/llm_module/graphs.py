@@ -25,7 +25,8 @@ class GenerationGraph:
         self.graph = StateGraph(GenerationState)
         self.mode = mode
         if self.mode == "local" and not local_model_cfg:
-            raise "tik tok"
+            raise ValueError(
+                "Local model configuration is required when mode is set to 'local'")
         self.local_model_cfg = local_model_cfg
         self._build_graph()
 
@@ -122,7 +123,7 @@ class GenerationGraph:
         относится ли правки к диаграмме к уже сгенерирванной, но пока без этого, нода верификации срабатывает только
         в начале и там может при определенных условиях.
         Агент возвращает месседж с верификации
-        state["agents_result"]["verifier"][-1]["result"].get("reason")
+        state["agents_result"]["verifier"][-1]["content"]
         """
 
         state["last"].append(["generator", "verifier"])
@@ -145,7 +146,7 @@ class GenerationGraph:
         """
 
         logger.info("Verifier agent condition check")
-        if state["agents_result"]["verifier"][-1]["result"].get("is_bpmn_request"):
+        if state["agents_result"]["verifier"][-1]["flag"]:
             return "clarifier"
         return END
 
@@ -157,13 +158,13 @@ class GenerationGraph:
         Assistant: Что должно быть отражено в вашей диаграмме.
 
         Месседж с вопросом:
-        state["agents_result"]["clarifier"][-1]["result"].get("clarification")
+        state["agents_result"]["clarifier"][-1]["content"]
         """
 
         state["last"].append(["generator", "clarifier"])
         logger.info("Clarifier agent is processing")
         if state["clarification_num_iterations"] <= 0:
-            state["last"].append(["generator", "x6processor"])
+            state["await_user_input"] = False
             return state
         llm_call = mistral_local_call if self.mode == "local" else mistral_call
         if self.local_model_cfg and llm_call == mistral_local_call:
@@ -174,6 +175,7 @@ class GenerationGraph:
             context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
         state = clarifier(state)
         state["clarification_num_iterations"] -= 1
+        state["await_user_input"] = True
         logger.info("Clarifier agent process ended")
         return state
 
@@ -209,7 +211,7 @@ class GenerationGraph:
             context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
         state = x6processor(state)
         state["bpmn"].append(state["agents_result"]
-                             ["x6processor"][-1]["result"])
+                             ["x6processor"][-1]["content"])
         logger.info("X6Processor agent process ended")
         return state
 
@@ -230,7 +232,7 @@ class GenerationGraph:
         editor = Editor(
             context=state["context"], llm_call=llm_call, local_model_cfg=local_model_cfg)
         state = editor(state)
-        state["bpmn"].append(state["agents_result"]["editor"][-1]["result"])
+        state["bpmn"].append(state["agents_result"]["editor"][-1]["content"])
         logger.info("Editor agent process ended")
         return state
 
@@ -252,7 +254,7 @@ class GenerationGraph:
         """
 
         logger.info("Generation agent check")
-        if state["bpmn"][-1] != [{"nodes": [], "edges": []}]:
+        if state["bpmn"][-1] != {"nodes": [], "edges": []}:
             logger.info("BPMN is present")
             return "editor"
         logger.info("BPMN is not present")
@@ -271,7 +273,7 @@ def test(user_input: str, mode: str, local_model_cfg=None, state: GenerationStat
         state = generation(user_input=user_input)
     state = generator(state)
     return state
-#
+
 # user_input = "Сделай мне диаграмму BPMN для процесса найма сотрудников"
 #
 # state = test(user_input, mode="api")
