@@ -32,7 +32,7 @@ def mistral_call(messages: List[Union[UserMessage, SystemMessage, AssistantMessa
             )
             return response.choices[0].message.content
         except Exception as e:
-            # logger.exception(f"Error during Mistral API call: {e}")
+            logger.exception(f"Error during Mistral API call: {e}")
             continue
 
 
